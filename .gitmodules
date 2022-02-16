@@ -1,0 +1,7 @@
+[submodule "themes/contrast-hugo"]
+	path = themes/contrast-hugo
+	url = https://github.com/niklasbuschmann/contrast-hugo.git
+[submodule "public"]
+	path = public
+	url = git@github.com:kshatos/kshatos.github.io.git
+	branch = main
