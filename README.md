@@ -1,8 +1,8 @@
 # blog-source
 ### About
-This repo contains the static site generation source for the blog I host on my github pages.
+This repo contains the static site generation source for the blog I host on my github.
 
-The site is currently generated using Hugo  and the contrast-hugo theme.
+The site is currently generated using Hugo and the contrast-hugo theme.
 
 [Hugo](https://gohugo.io/)  
 [contrast-hugo](https://github.com/niklasbuschmann/contrast-hugo/tree/9b3ec3d0243d3076342e53bbdcc6579265eb1cb6) 
