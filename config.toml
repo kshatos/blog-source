@@ -5,6 +5,9 @@ title = "Keagan Shatos"
 author = "Keagan Shatos"
 theme = "contrast-hugo"
 
+[markup.goldmark.renderer]
+unsafe= true
+
 [params]
   minimal = false
   excerpts = false
@@ -17,6 +20,14 @@ theme = "contrast-hugo"
     name = "Posts"
     url = "/posts/"
     weight = 10
+
+  [[menu.main]]
+      identifier = "github"
+      name = "Github"
+      url = "https://github.com/kshatos/"
+      weight = 10
+      [menu.main.params]
+        external = true
 
   [[menu.main]]
     identifier = "about"
