@@ -23,3 +23,8 @@ void main()
 
 Here is an equation.
 $$y_t = \beta_0 + \beta_1 x_t + \epsilon_t$$
+
+
+here is an opengl canvas
+<script src="\javascript\canvas_demo.js" defer></script>
+<canvas id="glCanvas" width="640" height="480"></canvas>
