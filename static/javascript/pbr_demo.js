@@ -3,40 +3,40 @@ Data
 */
 const positions = [
     // Front face
-    -1.0, -1.0,  1.0,
-     1.0, -1.0,  1.0,
-     1.0,  1.0,  1.0,
-    -1.0,  1.0,  1.0,
+    -1.0, -1.0,  1.0,   0.0, 0.0, 1.0,
+     1.0, -1.0,  1.0,   0.0, 0.0, 1.0,
+     1.0,  1.0,  1.0,   0.0, 0.0, 1.0,
+    -1.0,  1.0,  1.0,   0.0, 0.0, 1.0,
   
     // Back face
-    -1.0, -1.0, -1.0,
-    -1.0,  1.0, -1.0,
-     1.0,  1.0, -1.0,
-     1.0, -1.0, -1.0,
+    -1.0, -1.0, -1.0,   0.0, 0.0, -1.0,
+    -1.0,  1.0, -1.0,   0.0, 0.0, -1.0,
+     1.0,  1.0, -1.0,   0.0, 0.0, -1.0,
+     1.0, -1.0, -1.0,   0.0, 0.0, -1.0,
   
     // Top face
-    -1.0,  1.0, -1.0,
-    -1.0,  1.0,  1.0,
-     1.0,  1.0,  1.0,
-     1.0,  1.0, -1.0,
+    -1.0,  1.0, -1.0,   0.0, 1.0, 0.0,
+    -1.0,  1.0,  1.0,   0.0, 1.0, 0.0,
+     1.0,  1.0,  1.0,   0.0, 1.0, 0.0,
+     1.0,  1.0, -1.0,   0.0, 1.0, 0.0,
   
     // Bottom face
-    -1.0, -1.0, -1.0,
-     1.0, -1.0, -1.0,
-     1.0, -1.0,  1.0,
-    -1.0, -1.0,  1.0,
+    -1.0, -1.0, -1.0,   0.0, -1.0, 0.0,
+     1.0, -1.0, -1.0,   0.0, -1.0, 0.0,
+     1.0, -1.0,  1.0,   0.0, -1.0, 0.0,
+    -1.0, -1.0,  1.0,   0.0, -1.0, 0.0,
   
     // Right face
-     1.0, -1.0, -1.0,
-     1.0,  1.0, -1.0,
-     1.0,  1.0,  1.0,
-     1.0, -1.0,  1.0,
+     1.0, -1.0, -1.0,   1.0, 0.0, 0.0,
+     1.0,  1.0, -1.0,   1.0, 0.0, 0.0,
+     1.0,  1.0,  1.0,   1.0, 0.0, 0.0,
+     1.0, -1.0,  1.0,   1.0, 0.0, 0.0,
   
     // Left face
-    -1.0, -1.0, -1.0,
-    -1.0, -1.0,  1.0,
-    -1.0,  1.0,  1.0,
-    -1.0,  1.0, -1.0,
+    -1.0, -1.0, -1.0,   -1.0, 0.0, 0.0,
+    -1.0, -1.0,  1.0,   -1.0, 0.0, 0.0,
+    -1.0,  1.0,  1.0,   -1.0, 0.0, 0.0,
+    -1.0,  1.0, -1.0,   -1.0, 0.0, 0.0,
   ];
 
   const indices = [
@@ -97,6 +97,7 @@ function loadTextFile(url, callback) {
     request.send();
 }
 
+
 /*
 Main Logic
 */
@@ -121,11 +122,11 @@ function buildVertexBuffer(gl, renderData)
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
 
     positionID = gl.getAttribLocation(renderData.shaderProgram, 'a_Position');
-    gl.vertexAttribPointer(positionID, 3, gl.FLOAT, false, 0, 0);
+    gl.vertexAttribPointer(positionID, 3, gl.FLOAT, false, 4*6, 0);
     gl.enableVertexAttribArray(positionID);
 
     normalID = gl.getAttribLocation(renderData.shaderProgram, 'a_Normal');
-    gl.vertexAttribPointer(normalID, 3, gl.FLOAT, false, 0, 0);
+    gl.vertexAttribPointer(normalID, 3, gl.FLOAT, false, 4*6, 4*3);
     gl.enableVertexAttribArray(normalID);
 
     renderData.vertexBuffer = vertexBuffer;
@@ -139,39 +140,41 @@ function buildIndexBuffer(gl, renderData)
     renderData.indexBuffer = indexBuffer;
 }
 
+function initializeUniformData(renderData)
+{
+    renderData.normalMatrix = mat3.create();
+    renderData.modelMatrix = mat4.create();
+    renderData.viewMatrix = mat4.create();
+    renderData.projectionMatrix = mat4.create();
+
+    mat4.perspective(renderData.projectionMatrix, Math.PI/4, 1, 0.01, 20.0 );
+
+    mat4.rotate(renderData.modelMatrix, renderData.modelMatrix, Math.PI/4, [1.0, 1.0, 0.0])
+
+    cameraMatrix = mat4.create();
+    mat4.translate(cameraMatrix, cameraMatrix, [0.0, 0.0, 10.0]);
+    mat4.invert(renderData.viewMatrix, cameraMatrix);
+
+    normalMatrix4 = mat4.create();
+    mat4.invert(normalMatrix4, renderData.modelMatrix);
+    mat4.transpose(normalMatrix4, normalMatrix4);
+    mat3.fromMat4(renderData.normalMatrix, normalMatrix4);
+}
+
 function setShaderUniforms(gl, renderData)
 {
     gl.useProgram(renderData.shaderProgram);
     normalMatLoc = gl.getUniformLocation(renderData.shaderProgram, "u_NormalMatrix");
-    gl.uniformMatrix3fv(normalMatLoc, false,
-        [
-            1.0, 0.0, 0.0,
-            0.0, 1.0, 0.0,
-            0.0, 0.0, 1.0]);
+    gl.uniformMatrix3fv(normalMatLoc, false, renderData.normalMatrix);
 
     modelMatLoc = gl.getUniformLocation(renderData.shaderProgram, "u_ModelMatrix");
-    gl.uniformMatrix4fv(modelMatLoc, false,
-        [
-            1.0, 0.0, 0.0, 0.0,
-            0.0, 1.0, 0.0, 0.0,
-            0.0, 0.0, 1.0, 0.0,
-            0.0, 0.0, 0.0, 1.0]);
+    gl.uniformMatrix4fv(modelMatLoc, false, renderData.modelMatrix);
     
     viewMatLoc = gl.getUniformLocation(renderData.shaderProgram, "u_ViewMatrix");
-    gl.uniformMatrix4fv(viewMatLoc, false,
-        [
-            1.0, 0.0, 0.0, 0.0,
-            0.0, 1.0, 0.0, 0.0,
-            0.0, 0.0, 1.0, 0.0,
-            0.0, 0.0, 0.0, 1.0]);
+    gl.uniformMatrix4fv(viewMatLoc, false, renderData.viewMatrix);
 
     projMatLoc = gl.getUniformLocation(renderData.shaderProgram, "u_ProjectionMatrix");
-    gl.uniformMatrix4fv(projMatLoc, false,
-        [
-            1.0, 0.0, 0.0, 0.0,
-            0.0, 1.0, 0.0, 0.0,
-            0.0, 0.0, 1.0, 0.0,
-            0.0, 0.0, 0.0, 1.0]);
+    gl.uniformMatrix4fv(projMatLoc, false, renderData.projectionMatrix);
 }
 
 
@@ -189,6 +192,10 @@ function main()
       return;
     }
 
+    gl.enable(gl.DEPTH_TEST);
+    gl.depthFunc(gl.LEQUAL);
+    gl.cullFace(gl.BACK);
+
     // Build render data
     renderData = {
         shaderProgram: null,
@@ -198,37 +205,19 @@ function main()
 
     loadShaderProgram(gl, renderData, "\\shaders\\pbr_demo.vs", "\\shaders\\pbr_demo.fs");
     buildVertexBuffer(gl, renderData);
-    buildIndexBuffer(gl, renderData)
-    setShaderUniforms(gl, renderData)
+    buildIndexBuffer(gl, renderData);
+    initializeUniformData(renderData);
 
     // Draw
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
-    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.clear(gl.COLOR_BUFFER_BIT || gl.DEPTH_BUFFER_BIT);
     
     gl.useProgram(renderData.shaderProgram);
-    setShaderUniforms(gl, renderData)
+    setShaderUniforms(gl, renderData);
 
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, renderData.indexBuffer);
     gl.bindBuffer(gl.ARRAY_BUFFER, renderData.vertexBuffer);
-    {
-        const vertexCount = 36;
-        const type = gl.UNSIGNED_SHORT;
-        const offset = 0;
-        gl.drawElements(gl.TRIANGLES, vertexCount, type, offset);
-    }
-
-
-
-
-
-
-
-
-
-
-
-
-
+    gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
 }
 
 window.onload = main;
