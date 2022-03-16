@@ -146,13 +146,14 @@ function initializeUniformData(renderData)
     renderData.modelMatrix = mat4.create();
     renderData.viewMatrix = mat4.create();
     renderData.projectionMatrix = mat4.create();
+    renderData.cameraPosition = vec3.fromValues(0.0, 0.0, 10.0);
 
     mat4.perspective(renderData.projectionMatrix, Math.PI/4, 1, 0.01, 20.0 );
 
     mat4.rotate(renderData.modelMatrix, renderData.modelMatrix, Math.PI/4, [1.0, 1.0, 0.0])
 
     cameraMatrix = mat4.create();
-    mat4.translate(cameraMatrix, cameraMatrix, [0.0, 0.0, 10.0]);
+    mat4.translate(cameraMatrix, cameraMatrix, renderData.cameraPosition);
     mat4.invert(renderData.viewMatrix, cameraMatrix);
 
     normalMatrix4 = mat4.create();
@@ -175,6 +176,9 @@ function setShaderUniforms(gl, renderData)
 
     projMatLoc = gl.getUniformLocation(renderData.shaderProgram, "u_ProjectionMatrix");
     gl.uniformMatrix4fv(projMatLoc, false, renderData.projectionMatrix);
+
+    cameraPosLoc = gl.getUniformLocation(renderData.shaderProgram, "u_viewPos");
+    gl.uniform3fv(cameraPosLoc, renderData.cameraPosition);
 }
 
 
