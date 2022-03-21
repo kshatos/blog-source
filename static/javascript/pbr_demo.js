@@ -125,7 +125,7 @@ function buildVertexBuffer(gl, renderData)
 {
     let vertexBuffer = gl.createBuffer(gl.ARRAY_BUFFER);
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(sphere_mesh.vertices), gl.STATIC_DRAW);
 
     positionID = gl.getAttribLocation(renderData.shaderProgram, 'a_Position');
     gl.vertexAttribPointer(positionID, 3, gl.FLOAT, false, 4*6, 0);
@@ -142,7 +142,7 @@ function buildIndexBuffer(gl, renderData)
 {
     const indexBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint16Array(indices), gl.STATIC_DRAW);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint16Array(sphere_mesh.indices), gl.STATIC_DRAW);
     renderData.indexBuffer = indexBuffer;
 }
 
@@ -159,7 +159,7 @@ function initializeUniformData(renderData)
     vec3.add(renderData.cameraPosition, renderData.cameraPosition, [0.0, 0.0, 10.0]);
    
     mat4.perspective(renderData.projectionMatrix, Math.PI/4, 1, 0.01, 20.0 );
-    mat4.rotate(renderData.modelMatrix, renderData.modelMatrix, Math.PI/4, [1.0, 1.0, 0.0])
+    //mat4.rotate(renderData.modelMatrix, renderData.modelMatrix, Math.PI/4, [1.0, 1.0, 0.0])
 }
 
 function updateUniformData(renderData)
@@ -207,7 +207,7 @@ function drawScene(gl, renderData)
 
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, renderData.indexBuffer);
     gl.bindBuffer(gl.ARRAY_BUFFER, renderData.vertexBuffer);
-    gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
+    gl.drawElements(gl.TRIANGLES, sphere_mesh.indices.length, gl.UNSIGNED_SHORT, 0);
 }
 
 
