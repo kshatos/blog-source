@@ -113,7 +113,7 @@ vec3 PointLightReflectedRadiance(
 //////////////////////////////
 uniform vec3 u_albedo;
 uniform float u_roughness;
-uniform float u_metalic;
+uniform float u_metallic;
 
 varying vec3 Pos;
 varying vec3 Normal;
@@ -130,9 +130,9 @@ void main()
     PBRSurfaceData surface;
     surface.position = Pos;
     surface.normal = normalize(Normal);
-    surface.albedo = vec3(0.9, 0.5, 0.0);
-    surface.metallic = 0.0;
-    surface.roughness = 0.05;
+    surface.albedo = u_albedo;
+    surface.metallic = u_metallic;
+    surface.roughness = u_roughness * u_roughness;
 
     vec3 result = PointLightReflectedRadiance(light, surface);
     result = result / (result + vec3(1.0));
