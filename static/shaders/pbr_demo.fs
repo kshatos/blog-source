@@ -122,8 +122,7 @@ varying vec3 Normal;
 void main()
 {
     PointLight light;
-    light.position = vec3(0.0, 0.0, 10.0);
-    light.radiantFlux = 5000.0;
+    light.radiantFlux = 3000.0;
     light.range = 100.0;
     light.color = vec3(1.0, 1.0, 1.0);
 
@@ -134,7 +133,19 @@ void main()
     surface.metallic = u_metallic;
     surface.roughness = u_roughness * u_roughness;
 
-    vec3 result = PointLightReflectedRadiance(light, surface);
+    vec3 result = vec3(0.0, 0.0, 0.0);
+
+    light.position = vec3(0.0, -1.0, 10.0);
+    result = PointLightReflectedRadiance(light, surface);
+
+    light.position = vec3(1.0, 1.0, 10.0);
+    result += PointLightReflectedRadiance(light, surface);
+
+    light.position = vec3(-1.0, 1.0, 10.0);
+    result += PointLightReflectedRadiance(light, surface);
+
+    result += 0.2 * surface.albedo;
+
     result = result / (result + vec3(1.0));
     result = pow(result, vec3(1.0/2.2)); 
 

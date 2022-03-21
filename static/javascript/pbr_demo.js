@@ -160,10 +160,43 @@ function initializeUniformData(renderData)
     renderData.metallic = 0.0;
     renderData.roughness = 0.0;
 
-    vec3.add(renderData.cameraPosition, renderData.cameraPosition, [0.0, 0.0, 10.0]);
+    vec3.add(renderData.cameraPosition, renderData.cameraPosition, [0.0, 0.0, 5.0]);
    
-    mat4.perspective(renderData.projectionMatrix, Math.PI/4, 1, 0.01, 20.0 );
+    mat4.perspective(renderData.projectionMatrix, Math.PI/4, 1, 0.01, 10.0 );
     //mat4.rotate(renderData.modelMatrix, renderData.modelMatrix, Math.PI/4, [1.0, 1.0, 0.0])
+}
+
+function initializeUI(renderData)
+{
+    var albedoRSlider = document.getElementById("albedoRSlider");
+    renderData.albedo[0] = albedoRSlider.value;
+    albedoRSlider.oninput = function() {
+        renderData.albedo[0] = albedoRSlider.value;
+    }
+
+    var albedoGSlider = document.getElementById("albedoGSlider");
+    renderData.albedo[1] = albedoGSlider.value;
+    albedoGSlider.oninput = function() {
+        renderData.albedo[1] = albedoGSlider.value;
+    }
+
+    var albedoBSlider = document.getElementById("albedoBSlider");
+    renderData.albedo[2] = albedoBSlider.value;
+    albedoBSlider.oninput = function() {
+        renderData.albedo[2] = albedoBSlider.value;
+    }
+
+    var metallicSlider = document.getElementById("metallicSlider");
+    renderData.metallic = metallicSlider.value;
+    metallicSlider.oninput = function() {
+        renderData.metallic = metallicSlider.value;
+    }
+
+    var roughnessSlider = document.getElementById("roughnessSlider");
+    renderData.roughness = roughnessSlider.value;
+    roughnessSlider.oninput = function() {
+        renderData.roughness = roughnessSlider.value;
+    }
 }
 
 function updateUniformData(renderData)
@@ -229,7 +262,7 @@ Main
 */
 function main()
 {
-    // Setup context
+    // Setup webGL context
     const canvas = document.querySelector("#glCanvas");
     const gl = canvas.getContext("webgl");
   
@@ -242,44 +275,14 @@ function main()
     gl.depthFunc(gl.LEQUAL);
     gl.cullFace(gl.BACK);
 
-    // Build render data
+    // Initialize render data
     renderData = {};
-
     loadShaderProgram(gl, renderData, "\\shaders\\pbr_demo.vs", "\\shaders\\pbr_demo.fs");
     buildVertexBuffer(gl, renderData);
     buildIndexBuffer(gl, renderData);
     initializeUniformData(renderData);
-
-    // Setup UI callbacks
-    var albedoRSlider = document.getElementById("albedoRSlider");
-    renderData.albedo[0] = albedoRSlider.value;
-    albedoRSlider.oninput = function() {
-        renderData.albedo[0] = albedoRSlider.value;
-    }
-
-    var albedoGSlider = document.getElementById("albedoGSlider");
-    renderData.albedo[1] = albedoGSlider.value;
-    albedoGSlider.oninput = function() {
-        renderData.albedo[1] = albedoGSlider.value;
-    }
-
-    var albedoBSlider = document.getElementById("albedoBSlider");
-    renderData.albedo[2] = albedoBSlider.value;
-    albedoBSlider.oninput = function() {
-        renderData.albedo[2] = albedoBSlider.value;
-    }
-
-    var metallicSlider = document.getElementById("metallicSlider");
-    renderData.metallic = metallicSlider.value;
-    metallicSlider.oninput = function() {
-        renderData.metallic = metallicSlider.value;
-    }
-
-    var roughnessSlider = document.getElementById("roughnessSlider");
-    renderData.roughness = roughnessSlider.value;
-    roughnessSlider.oninput = function() {
-        renderData.roughness = roughnessSlider.value;
-    }
+    initializeUI(renderData)
+    
     // Animate
     lastTime = 0.0;
     function frameWork(currentTime)
