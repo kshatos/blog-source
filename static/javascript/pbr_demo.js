@@ -1,4 +1,10 @@
 /*
+Unpack libary
+*/
+const { mat2, mat2d, mat3, mat4, quat, quat2, vec2, vec3, vec4 } = glMatrix;
+
+
+/*
 Data
 */
 const positions = [
@@ -142,18 +148,28 @@ function buildIndexBuffer(gl, renderData)
 
 function initializeUniformData(renderData)
 {
+    renderData.cameraPosition = vec3.create();
+    renderData.cameraRotation = quat.create();
+
     renderData.normalMatrix = mat3.create();
     renderData.modelMatrix = mat4.create();
     renderData.viewMatrix = mat4.create();
     renderData.projectionMatrix = mat4.create();
-    renderData.cameraPosition = vec3.fromValues(0.0, 0.0, 10.0);
 
+    vec3.add(renderData.cameraPosition, renderData.cameraPosition, [0.0, 0.0, 10.0]);
+   
     mat4.perspective(renderData.projectionMatrix, Math.PI/4, 1, 0.01, 20.0 );
-
     mat4.rotate(renderData.modelMatrix, renderData.modelMatrix, Math.PI/4, [1.0, 1.0, 0.0])
+}
 
+function updateUniformData(renderData)
+{
     cameraMatrix = mat4.create();
-    mat4.translate(cameraMatrix, cameraMatrix, renderData.cameraPosition);
+    mat4.fromRotationTranslation(
+        cameraMatrix,
+        renderData.cameraRotation,
+        renderData.cameraPosition);
+    
     mat4.invert(renderData.viewMatrix, cameraMatrix);
 
     normalMatrix4 = mat4.create();
@@ -181,6 +197,19 @@ function setShaderUniforms(gl, renderData)
     gl.uniform3fv(cameraPosLoc, renderData.cameraPosition);
 }
 
+function drawScene(gl, renderData)
+{
+    gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT || gl.DEPTH_BUFFER_BIT);
+    
+    gl.useProgram(renderData.shaderProgram);
+    setShaderUniforms(gl, renderData);
+
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, renderData.indexBuffer);
+    gl.bindBuffer(gl.ARRAY_BUFFER, renderData.vertexBuffer);
+    gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
+}
+
 
 /*
 Main
@@ -201,27 +230,32 @@ function main()
     gl.cullFace(gl.BACK);
 
     // Build render data
-    renderData = {
-        shaderProgram: null,
-        vertexBuffer: null,
-        indexBuffer: null,
-    };
+    renderData = {};
 
     loadShaderProgram(gl, renderData, "\\shaders\\pbr_demo.vs", "\\shaders\\pbr_demo.fs");
     buildVertexBuffer(gl, renderData);
     buildIndexBuffer(gl, renderData);
     initializeUniformData(renderData);
 
-    // Draw
-    gl.clearColor(0.0, 0.0, 0.0, 1.0);
-    gl.clear(gl.COLOR_BUFFER_BIT || gl.DEPTH_BUFFER_BIT);
-    
-    gl.useProgram(renderData.shaderProgram);
-    setShaderUniforms(gl, renderData);
+    // Animate
+    lastTime = 0.0;
+    function frameWork(currentTime)
+    {
+        var deltaTime = currentTime - lastTime;
 
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, renderData.indexBuffer);
-    gl.bindBuffer(gl.ARRAY_BUFFER, renderData.vertexBuffer);
-    gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
+        var angleChange = deltaTime * 0.001;
+        vec3.rotateY(renderData.cameraPosition, renderData.cameraPosition, [0, 0, 0], angleChange);
+        quat.rotateY(renderData.cameraRotation, renderData.cameraRotation, angleChange);
+
+        updateUniformData(renderData);
+        drawScene(gl, renderData);
+
+        lastTime = currentTime;
+        requestAnimationFrame(frameWork);
+    }
+
+    requestAnimationFrame(frameWork);
+
 }
 
 window.onload = main;

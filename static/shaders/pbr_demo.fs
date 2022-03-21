@@ -123,7 +123,7 @@ void main()
 {
     PointLight light;
     light.position = u_viewPos;
-    light.radiantFlux = 1000.0;
+    light.radiantFlux = 5000.0;
     light.range = 100.0;
     light.color = vec3(1.0, 1.0, 1.0);
 
