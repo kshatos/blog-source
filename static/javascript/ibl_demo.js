@@ -225,7 +225,7 @@ function main()
 
     // Initialize render data
     renderData = {};
-    loadShaderProgram(gl, renderData, "\\shaders\\pbr_demo.vs", "\\shaders\\pbr_demo.fs");
+    loadShaderProgram(gl, renderData, "\\shaders\\ibl_demo.vs", "\\shaders\\ibl_demo.fs");
     buildVertexBuffer(gl, renderData);
     buildIndexBuffer(gl, renderData);
     initializeUniformData(renderData);
