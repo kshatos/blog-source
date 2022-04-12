@@ -10,6 +10,7 @@ GL Canvas & UI
 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gl-matrix/3.4.2/gl-matrix-min.js" integrity="sha512-eV9ExyTa3b+YHr99IBTYpwk4wbgDMDlfW8uTxhywO8dWb810fGUSKDgHhEv1fAqmJT4jyYnt1iWWMW4FRxeQOQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="\javascript\sphere_mesh.js" defer></script>
+<script src="\javascript\cube_mesh.js" defer></script>
 <script src="\javascript\ibl_demo.js" defer></script>
 
 <canvas id="glCanvas" width="500" height="500"></canvas>

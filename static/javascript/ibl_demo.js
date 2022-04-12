@@ -51,11 +51,50 @@ function loadTextFile(url, callback) {
     request.send();
 }
 
+function loadTexture(gl, url)
+{
+    const texture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+
+    const level = 0;
+    const internalFormat = gl.RGBA;
+    const width = 1;
+    const height = 1;
+    const border = 0;
+    const srcFormat = gl.RGBA;
+    const srcType = gl.UNSIGNED_BYTE;
+    const pixel = new Uint8Array([0, 0, 255, 255]);
+
+    gl.texImage2D(
+        gl.TEXTURE_2D,
+        level, internalFormat,
+        width, height, border, 
+        srcFormat, srcType, pixel);
+
+    const image = new Image();
+    image.onload = function()
+    {
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.texImage2D(
+            gl.TEXTURE_2D,
+            level, internalFormat,
+            srcFormat, srcType,
+            image);
+
+       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    }
+    image.src = url;
+
+    return texture;
+}
+
 
 /*
 Main Logic
 */
-function loadShaderProgram(gl,renderData, vertexURL, fragmentURL)
+function loadShaderProgram(gl, vertexURL, fragmentURL)
 {
     var vertexShader;
     var fragmentShader;
@@ -66,7 +105,7 @@ function loadShaderProgram(gl,renderData, vertexURL, fragmentURL)
         fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, text);
     });
     var shaderProgram = createProgram(gl, vertexShader, fragmentShader);
-    renderData.shaderProgram = shaderProgram;
+    return shaderProgram;
 }
 
 function buildVertexBuffer(gl, renderData)
@@ -225,12 +264,15 @@ function main()
 
     // Initialize render data
     renderData = {};
-    loadShaderProgram(gl, renderData, "\\shaders\\ibl_demo.vs", "\\shaders\\ibl_demo.fs");
+    renderData.shaderProgram = loadShaderProgram(gl, "\\shaders\\projection.vs", "\\shaders\\projection.fs");
     buildVertexBuffer(gl, renderData);
     buildIndexBuffer(gl, renderData);
     initializeUniformData(renderData);
     initializeUI(renderData)
     
+    let img = loadTexture(gl, "\\images\\Circus_Backstage_8k.jpg")
+    console.log(img);
+
     // Animate
     lastTime = 0.0;
     function frameWork(currentTime)
