@@ -86,15 +86,13 @@ function compileShaderFromFiles(gl, vertexURL, fragmentURL)
 /***************************************
 TEXTURES
 ***************************************/
-function createNewTexture(gl)
+function createNewTexture(gl, width=1, height=1)
 {
     let texture = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, texture);
 
     const level = 0;
     const internalFormat = gl.RGBA;
-    const width = 1;
-    const height = 1;
     const border = 0;
     const srcFormat = gl.RGBA;
     const srcType = gl.UNSIGNED_BYTE;
@@ -133,4 +131,30 @@ function loadTextureFromImage(gl, texture, url, onLoad)
        onLoad(image, texture);
     }
     image.src = url;
+}
+
+/***************************************
+FRAMEBUFFER
+***************************************/
+function createFramebuffer(gl, width, height)
+{
+    let framebuffer = gl.createFramebuffer();
+
+    colorTexture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, colorTexture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, colorTexture, 0);
+
+    var fbStatus = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+    if (gl.FRAMEBUFFER_COMPLETE !== fbStatus) {
+      console.log('Frame buffer object is incomplete: ' + fbStatus.toString());
+      return error();
+    }
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.bindTexture(gl.TEXTURE_2D, null);
+
+    return framebuffer;
 }

@@ -1,3 +1,5 @@
+
+
 function buildVertexBuffer(gl, renderData)
 {
     let vertexBuffer = gl.createBuffer(gl.ARRAY_BUFFER);
@@ -134,9 +136,6 @@ function drawScene(gl, renderData)
 }
 
 
-/*
-Main
-*/
 function main()
 {
     // Setup webGL context
@@ -154,19 +153,39 @@ function main()
 
     // Initialize render data
     renderData = {};
-    renderData.shaderProgram = compileShaderFromFiles(gl, "\\shaders\\projection.vs", "\\shaders\\projection.fs");
+
+    renderData.shaderProgram = compileShaderFromFiles(gl,
+        "\\shaders\\projection.vs",
+        "\\shaders\\projection.fs");
+
+    renderData.diffuseProgram = compileShaderFromFiles(gl,
+        "\\shaders\\diffuse_integration.vs",
+        "\\shaders\\diffuse_integration.fs");
+
     buildVertexBuffer(gl, renderData);
     buildIndexBuffer(gl, renderData);
     initializeUniformData(renderData);
-    initializeUI(renderData)
-    
+    initializeUI(renderData);
+
     renderData.environmentRadianceTexture = createNewTexture(gl);
-    renderData.environmentDiffuseTexture = createNewTexture(gl);
 
     loadTextureFromImage(gl,
         renderData.environmentRadianceTexture,
         "\\images\\Circus_Backstage_8k.jpg",
         function(x, x){});
+
+    framebuffer = createFramebuffer(gl, 200, 200);
+
+    // Precompute
+    gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+    gl.useProgram(renderData.diffuseProgram);
+    gl.bindTexture(gl.TEXTURE_2D, renderData.environmentRadianceTexture);
+
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, renderData.indexBuffer);
+    gl.bindBuffer(gl.ARRAY_BUFFER, renderData.vertexBuffer);
+    gl.drawElements(gl.TRIANGLES, sphere_mesh.indices.length, gl.UNSIGNED_SHORT, 0);
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
     // Animate
     lastTime = 0.0;
