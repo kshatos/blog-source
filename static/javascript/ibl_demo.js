@@ -192,6 +192,10 @@ function main()
     mymesh.mesh.loadMeshFromObject(sphere_mesh);
     console.log(mymesh);
 
+    myshader = new ShaderProgram(gl);
+    myshader.compileFromSource(emptyVertexSource, emptyFragmentSource);
+    console.log(myshader);
+
     renderData = {};
 
     renderData.shaderProgram = compileShaderFromFiles(gl,

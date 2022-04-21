@@ -39,7 +39,6 @@ function Transform()
     }
 }
 
-
 /***************************************
 MESH
 ***************************************/
@@ -80,8 +79,7 @@ function Model(gl)
     this.transform = new Transform();
 }
 
-
-
+// DEPRECIATED
 function loadMeshFromObject(gl, meshData)
 {
     meshBuffer = {
@@ -113,7 +111,6 @@ function loadMeshFromObject(gl, meshData)
     return meshBuffer;
 }
 
-
 /***************************************
 SHADER
 ***************************************/
@@ -141,6 +138,44 @@ function createShader(gl, type, source)
     gl.deleteShader(shader);
 }
 
+function createProgram(gl, vertexShader, fragmentShader) {
+    // create a program.
+    var program = gl.createProgram();
+   
+    // attach the shaders.
+    gl.attachShader(program, vertexShader);
+    gl.attachShader(program, fragmentShader);
+   
+    // link the program.
+    gl.linkProgram(program);
+   
+    // Check if it linked.
+    var success = gl.getProgramParameter(program, gl.LINK_STATUS);
+    if (!success) {
+        // something went wrong with the link
+        throw ("program failed to link:" + gl.getProgramInfoLog (program));
+    }
+   
+    return program;
+};
+
+function ShaderProgram(gl)
+{
+    this.program = null;
+
+    this.compileFromSource = function(vertexSource, fragmentSource) {
+        let vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexSource);
+        let fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentSource);
+        this.program = createProgram(gl, vertexShader, fragmentShader);
+    }
+
+    this.use = function() {
+        if (this.program == null) { return; }
+        gl.useProgram(this.program);
+    }
+}
+
+// DEPRECIATED
 function compileShaderFromSource(gl, vertexSource, fragmentSource)
 {
     vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexSource);
