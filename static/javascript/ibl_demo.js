@@ -196,6 +196,15 @@ function main()
     myshader.compileFromSource(emptyVertexSource, emptyFragmentSource);
     console.log(myshader);
 
+    mytexture = new Texture2D(gl);
+    const myimage = new Image();
+    myimage.onload = function()
+    {
+        mytexture.loadFromImage(myimage);
+        console.log(mytexture);
+    }
+    myimage.src = "\\images\\Circus_Backstage_8k.jpg";
+
     renderData = {};
 
     renderData.shaderProgram = compileShaderFromFiles(gl,

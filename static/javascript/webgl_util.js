@@ -214,6 +214,58 @@ function compileShaderFromFiles(gl, vertexURL, fragmentURL)
 /***************************************
 TEXTURES
 ***************************************/
+function Texture2D(gl)
+{
+    this.texture = gl.createTexture(gl.TEXTURE_2D);
+    gl.bindTexture(gl.TEXTURE_2D, this.texture);
+
+    // Fill with one blue pixel so state is valid to use
+    const width = 1;
+    const height = 1;
+    const level = 0;
+    const internalFormat = gl.RGBA;
+    const border = 0;
+    const srcFormat = gl.RGBA;
+    const srcType = gl.UNSIGNED_BYTE;
+    const pixel = new Uint8Array([0, 0, 255, 255]);
+
+    gl.texImage2D(
+        gl.TEXTURE_2D,
+        level, internalFormat,
+        width, height, border, 
+        srcFormat, srcType, pixel);
+
+    gl.bindTexture(gl.TEXTURE_2D, null);
+
+
+    this.loadFromImage = function(image) {
+        const level = 0;
+        const internalFormat = gl.RGBA;
+        const srcFormat = gl.RGBA;
+        const srcType = gl.UNSIGNED_BYTE;
+
+        gl.bindTexture(gl.TEXTURE_2D, this.texture);
+        gl.texImage2D(
+            gl.TEXTURE_2D,
+            level, internalFormat,
+            srcFormat, srcType,
+            image);
+
+       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+
+       gl.bindTexture(gl.TEXTURE_2D, null);
+    }
+
+    this.use = function()
+    {
+        gl.bindTexture(gl.TEXTURE_2D, this.texture);
+    }
+
+}
+
+// DEPRECIATED
 function createNewTexture(gl, width=1, height=1)
 {
     let texture = gl.createTexture();
