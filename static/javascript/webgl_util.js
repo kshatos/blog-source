@@ -118,7 +118,7 @@ SHADER
 ***************************************/
 function loadTextFile(url, callback) {
     var request = new XMLHttpRequest();
-    request.open('GET', url, false);
+    request.open('GET', url, true);
     request.addEventListener('load', function() {
         callback(request.responseText);
     });

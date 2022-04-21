@@ -64,52 +64,6 @@ function initializeUI(renderData)
     }
 }
 
-function updateUniformData(renderData)
-{
-    cameraMatrix = mat4.create();
-    mat4.fromRotationTranslation(
-        cameraMatrix,
-        renderData.cameraRotation,
-        renderData.cameraPosition);
-    
-    mat4.invert(renderData.viewMatrix, cameraMatrix);
-
-    normalMatrix4 = mat4.create();
-    mat4.invert(normalMatrix4, renderData.modelMatrix);
-    mat4.transpose(normalMatrix4, normalMatrix4);
-    mat3.fromMat4(renderData.normalMatrix, normalMatrix4);
-}
-
-function setShaderUniforms(gl, renderData)
-{
-    if (renderData.IBLShader.program == null) { return; }
-
-    renderData.IBLShader.program.use();
-    normalMatLoc = gl.getUniformLocation(renderData.shaderProgram, "u_NormalMatrix");
-    gl.uniformMatrix3fv(normalMatLoc, false, renderData.normalMatrix);
-
-    modelMatLoc = gl.getUniformLocation(renderData.shaderProgram, "u_ModelMatrix");
-    gl.uniformMatrix4fv(modelMatLoc, false, renderData.modelMatrix);
-    
-    viewMatLoc = gl.getUniformLocation(renderData.shaderProgram, "u_ViewMatrix");
-    gl.uniformMatrix4fv(viewMatLoc, false, renderData.viewMatrix);
-
-    projMatLoc = gl.getUniformLocation(renderData.shaderProgram, "u_ProjectionMatrix");
-    gl.uniformMatrix4fv(projMatLoc, false, renderData.projectionMatrix);
-
-    cameraPosLoc = gl.getUniformLocation(renderData.shaderProgram, "u_viewPos");
-    gl.uniform3fv(cameraPosLoc, renderData.cameraPosition);
-
-    albedoLoc = gl.getUniformLocation(renderData.shaderProgram, "u_albedo");
-    gl.uniform3fv(albedoLoc, renderData.albedo);
-
-    metallicLoc = gl.getUniformLocation(renderData.shaderProgram, "u_metallic");
-    gl.uniform1f(metallicLoc, renderData.metallic);
-
-    roughnessLoc = gl.getUniformLocation(renderData.shaderProgram, "u_roughness");
-    gl.uniform1f(roughnessLoc, renderData.roughness);
-}
-
 function drawMainSphere(gl, renderData)
 {
     let shader = renderData.IBLShader;
@@ -190,8 +144,7 @@ function main()
     });
 
     const environmentImage = new Image();
-    environmentImage.onload = function()
-    {
+    environmentImage.onload = function() {
         renderData.evironmentRadianceTex.loadFromImage(environmentImage);
     }
     environmentImage.src = "\\images\\Circus_Backstage_8k.jpg";
