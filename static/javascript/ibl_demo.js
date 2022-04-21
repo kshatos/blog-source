@@ -1,5 +1,41 @@
 
 
+function RenderData()
+{
+    // Mesh
+    this.mainSphere = null;
+    this.outerSphere = null;
+
+    // Shaders
+    this.IBLShader = null;
+
+    // Texture
+    this.evironmentRadianceTex = null;
+    this.diffuseTex = null;
+    this.prefilterTex = null;
+    this.lookupTex = null;
+
+    // Camera
+    this.cameraProjectionMat = null;
+    this.cameraTransform = null;
+
+}
+
+function buildMesh(gl, meshData)
+{
+    let vertexBuffer = gl.createBuffer(gl.ARRAY_BUFFER);
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(sphere_mesh.vertices), gl.STATIC_DRAW);
+
+    positionID = gl.getAttribLocation(renderData.shaderProgram, 'a_Position');
+    gl.vertexAttribPointer(positionID, 3, gl.FLOAT, false, 4*6, 0);
+    gl.enableVertexAttribArray(positionID);
+
+    normalID = gl.getAttribLocation(renderData.shaderProgram, 'a_Normal');
+    gl.vertexAttribPointer(normalID, 3, gl.FLOAT, false, 4*6, 4*3);
+    gl.enableVertexAttribArray(normalID);
+}
+
 function buildVertexBuffer(gl, renderData)
 {
     let vertexBuffer = gl.createBuffer(gl.ARRAY_BUFFER);
@@ -152,6 +188,10 @@ function main()
     gl.cullFace(gl.BACK);
 
     // Initialize render data
+    mymesh = new Model(gl);
+    mymesh.mesh.loadMeshFromObject(sphere_mesh);
+    console.log(mymesh);
+
     renderData = {};
 
     renderData.shaderProgram = compileShaderFromFiles(gl,

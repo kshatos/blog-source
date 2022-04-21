@@ -19,6 +19,99 @@ void main()
     gl_FragColor = vec4(0.0, 0.0, 1.0, 1.0);
 }
 `
+/***************************************
+Data Structures
+***************************************/
+function Transform()
+{
+    this.position = vec3.fromValues(0.0, 0.0, 0.0);
+    this.rotation = quat.create();
+    this.scale = vec3.fromValues(1.0, 1.0, 1.0);
+
+    this.getMatrix = function() {
+        let matrix = mat4.create();
+        fromRotationTranslationScale(
+            matrix,
+            this.rotation, 
+            this.position,
+            this.scale);
+        return matrix;
+    }
+}
+
+
+/***************************************
+MESH
+***************************************/
+function Mesh(gl)
+{
+    this.vertexBuffer = gl.createBuffer(gl.ARRAY_BUFFER);
+    this.indexBuffer = gl.createBuffer(gl.ELEMENT_ARRAY_BUFFER);
+
+    this.loadMeshFromObject = function(meshData) {
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(meshData.vertices), gl.STATIC_DRAW);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(meshData.vertices), gl.STATIC_DRAW);
+
+        positionID = 0;
+        normalID = 1
+        uvID = 2;
+
+        gl.vertexAttribPointer(positionID, 3, gl.FLOAT, false, 4*8, 0);
+        gl.enableVertexAttribArray(positionID);
+
+        gl.vertexAttribPointer(normalID, 3, gl.FLOAT, false, 4*8, 4*3);
+        gl.enableVertexAttribArray(normalID);
+
+        gl.vertexAttribPointer(uvID, 2, gl.FLOAT, false, 4*8, 4*6);
+        gl.enableVertexAttribArray(uvID);
+
+        this.indexBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint16Array(meshData.indices), gl.STATIC_DRAW);
+    }
+}
+
+function Model(gl)
+{
+    this.mesh = new Mesh(gl);
+    this.transform = new Transform();
+}
+
+
+
+function loadMeshFromObject(gl, meshData)
+{
+    meshBuffer = {
+        vertexBuffer: null,
+        indexBuffer: null
+    }
+
+    meshBuffer.vertexBuffer = gl.createBuffer(gl.ARRAY_BUFFER);
+    gl.bindBuffer(gl.ARRAY_BUFFER, meshBuffer.vertexBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(meshData.vertices), gl.STATIC_DRAW);
+
+    positionID = 0;
+    normalID = 1
+    uvID = 2;
+
+    gl.vertexAttribPointer(positionID, 3, gl.FLOAT, false, 4*8, 0);
+    gl.enableVertexAttribArray(positionID);
+
+    gl.vertexAttribPointer(normalID, 3, gl.FLOAT, false, 4*8, 4*3);
+    gl.enableVertexAttribArray(normalID);
+
+    gl.vertexAttribPointer(uvID, 2, gl.FLOAT, false, 4*8, 4*6);
+    gl.enableVertexAttribArray(uvID);
+
+    meshBuffer.indexBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, meshBuffer.indexBuffer);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint16Array(meshData.indices), gl.STATIC_DRAW);
+
+    return meshBuffer;
+}
 
 
 /***************************************
