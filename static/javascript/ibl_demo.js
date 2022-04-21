@@ -1,84 +1,34 @@
 
 
-function RenderData()
+function RenderData(gl)
 {
     // Mesh
-    this.mainSphere = null;
-    this.outerSphere = null;
+    this.mainSphere = new Model(gl);
+    this.outerSphere = Model(gl);
 
     // Shaders
-    this.IBLShader = null;
+    this.IBLShader = new ShaderProgram(gl);
 
     // Texture
-    this.evironmentRadianceTex = null;
-    this.diffuseTex = null;
-    this.prefilterTex = null;
-    this.lookupTex = null;
+    this.evironmentRadianceTex = new Texture2D(gl);
+    this.diffuseTex = new Texture2D(gl);
+    this.prefilterTex = new Texture2D(gl);
+    this.lookupTex = new Texture2D(gl);
 
     // Camera
-    this.cameraProjectionMat = null;
-    this.cameraTransform = null;
-
-}
-
-function buildMesh(gl, meshData)
-{
-    let vertexBuffer = gl.createBuffer(gl.ARRAY_BUFFER);
-    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(sphere_mesh.vertices), gl.STATIC_DRAW);
-
-    positionID = gl.getAttribLocation(renderData.shaderProgram, 'a_Position');
-    gl.vertexAttribPointer(positionID, 3, gl.FLOAT, false, 4*6, 0);
-    gl.enableVertexAttribArray(positionID);
-
-    normalID = gl.getAttribLocation(renderData.shaderProgram, 'a_Normal');
-    gl.vertexAttribPointer(normalID, 3, gl.FLOAT, false, 4*6, 4*3);
-    gl.enableVertexAttribArray(normalID);
-}
-
-function buildVertexBuffer(gl, renderData)
-{
-    let vertexBuffer = gl.createBuffer(gl.ARRAY_BUFFER);
-    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(sphere_mesh.vertices), gl.STATIC_DRAW);
-
-    positionID = gl.getAttribLocation(renderData.shaderProgram, 'a_Position');
-    gl.vertexAttribPointer(positionID, 3, gl.FLOAT, false, 4*6, 0);
-    gl.enableVertexAttribArray(positionID);
-
-    normalID = gl.getAttribLocation(renderData.shaderProgram, 'a_Normal');
-    gl.vertexAttribPointer(normalID, 3, gl.FLOAT, false, 4*6, 4*3);
-    gl.enableVertexAttribArray(normalID);
-
-    renderData.vertexBuffer = vertexBuffer;
-}
-
-function buildIndexBuffer(gl, renderData)
-{
-    const indexBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint16Array(sphere_mesh.indices), gl.STATIC_DRAW);
-    renderData.indexBuffer = indexBuffer;
+    this.camera = new PerspectiveCamera();
 }
 
 function initializeUniformData(renderData)
 {
-    renderData.cameraPosition = vec3.create();
-    renderData.cameraRotation = quat.create();
-
-    renderData.normalMatrix = mat3.create();
-    renderData.modelMatrix = mat4.create();
-    renderData.viewMatrix = mat4.create();
-    renderData.projectionMatrix = mat4.create();
-
     renderData.albedo = [0.0, 0.0, 0.0]
     renderData.metallic = 0.0;
     renderData.roughness = 0.0;
 
-    vec3.add(renderData.cameraPosition, renderData.cameraPosition, [0.0, 0.0, 5.0]);
-   
-    mat4.perspective(renderData.projectionMatrix, Math.PI/4, 1, 0.01, 10.0 );
-    //mat4.rotate(renderData.modelMatrix, renderData.modelMatrix, Math.PI/4, [1.0, 1.0, 0.0])
+    vec3.add(
+        renderData.camera.transform.position,
+        renderData.camera.transform.position,
+        [0.0, 0.0, 5.0]);
 }
 
 function initializeUI(renderData)
@@ -132,7 +82,9 @@ function updateUniformData(renderData)
 
 function setShaderUniforms(gl, renderData)
 {
-    gl.useProgram(renderData.shaderProgram);
+    if (renderData.IBLShader.program == null) { return; }
+
+    renderData.IBLShader.program.use();
     normalMatLoc = gl.getUniformLocation(renderData.shaderProgram, "u_NormalMatrix");
     gl.uniformMatrix3fv(normalMatLoc, false, renderData.normalMatrix);
 
@@ -158,17 +110,56 @@ function setShaderUniforms(gl, renderData)
     gl.uniform1f(roughnessLoc, renderData.roughness);
 }
 
+function drawMainSphere(gl, renderData)
+{
+    let shader = renderData.IBLShader;
+    let model = renderData.mainSphere;
+
+    if (shader.program == null) { return; }
+
+    shader.use();
+    renderData.evironmentRadianceTex.use();
+
+    let modelMatrix = model.transform.getMatrix();
+    let normalMatrix = normalFromModelMatrix(modelMatrix);
+
+    normalMatLoc = gl.getUniformLocation(shader.program, "u_NormalMatrix");
+    gl.uniformMatrix3fv(normalMatLoc, false, normalMatrix);
+
+    modelMatLoc = gl.getUniformLocation(shader.program, "u_ModelMatrix");
+    gl.uniformMatrix4fv(modelMatLoc, false, modelMatrix);
+    
+    viewMatLoc = gl.getUniformLocation(shader.program, "u_ViewMatrix");
+    gl.uniformMatrix4fv(viewMatLoc, false, renderData.camera.viewMatrix);
+
+    projMatLoc = gl.getUniformLocation(shader.program, "u_ProjectionMatrix");
+    gl.uniformMatrix4fv(projMatLoc, false, renderData.camera.projectionMatrix);
+
+    cameraPosLoc = gl.getUniformLocation(shader.program, "u_viewPos");
+    gl.uniform3fv(cameraPosLoc, renderData.camera.transform.position);
+
+    albedoLoc = gl.getUniformLocation(shader.program, "u_albedo");
+    gl.uniform3fv(albedoLoc, renderData.albedo);
+
+    metallicLoc = gl.getUniformLocation(shader.program, "u_metallic");
+    gl.uniform1f(metallicLoc, renderData.metallic);
+
+    roughnessLoc = gl.getUniformLocation(shader.program, "u_roughness");
+    gl.uniform1f(roughnessLoc, renderData.roughness);
+
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, model.mesh.indexBuffer);
+    gl.bindBuffer(gl.ARRAY_BUFFER, model.mesh.vertexBuffer);
+    gl.drawElements(gl.TRIANGLES, sphere_mesh.indices.length, gl.UNSIGNED_SHORT, 0);
+}
+
 function drawScene(gl, renderData)
 {
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT || gl.DEPTH_BUFFER_BIT);
-    
-    gl.useProgram(renderData.shaderProgram);
-    setShaderUniforms(gl, renderData);
 
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, renderData.indexBuffer);
-    gl.bindBuffer(gl.ARRAY_BUFFER, renderData.vertexBuffer);
-    gl.drawElements(gl.TRIANGLES, sphere_mesh.indices.length, gl.UNSIGNED_SHORT, 0);
+    renderData.camera.updateMatrices();
+
+    drawMainSphere(gl, renderData);
 }
 
 
@@ -188,77 +179,43 @@ function main()
     gl.cullFace(gl.BACK);
 
     // Initialize render data
-    mymesh = new Model(gl);
-    mymesh.mesh.loadMeshFromObject(sphere_mesh);
-    console.log(mymesh);
+    renderData = new RenderData(gl);
 
-    myshader = new ShaderProgram(gl);
-    myshader.compileFromSource(emptyVertexSource, emptyFragmentSource);
-    console.log(myshader);
+    renderData.mainSphere.mesh.loadMeshFromObject(sphere_mesh);
 
-    mytexture = new Texture2D(gl);
-    const myimage = new Image();
-    myimage.onload = function()
+    loadTextFile("\\shaders\\projection.vs", function(vertexSource) {
+        loadTextFile("\\shaders\\projection.fs", function(fragmentSource) {
+            renderData.IBLShader.compileFromSource(vertexSource, fragmentSource);
+        });
+    });
+
+    const environmentImage = new Image();
+    environmentImage.onload = function()
     {
-        mytexture.loadFromImage(myimage);
-        console.log(mytexture);
+        renderData.evironmentRadianceTex.loadFromImage(environmentImage);
     }
-    myimage.src = "\\images\\Circus_Backstage_8k.jpg";
+    environmentImage.src = "\\images\\Circus_Backstage_8k.jpg";
 
-    renderData = {};
-
-    renderData.shaderProgram = compileShaderFromFiles(gl,
-        "\\shaders\\projection.vs",
-        "\\shaders\\projection.fs");
-
-    renderData.diffuseProgram = compileShaderFromFiles(gl,
-        "\\shaders\\diffuse_integration.vs",
-        "\\shaders\\diffuse_integration.fs");
-
-    buildVertexBuffer(gl, renderData);
-    buildIndexBuffer(gl, renderData);
     initializeUniformData(renderData);
     initializeUI(renderData);
-
-    renderData.environmentRadianceTexture = createNewTexture(gl);
-
-    loadTextureFromImage(gl,
-        renderData.environmentRadianceTexture,
-        "\\images\\Circus_Backstage_8k.jpg",
-        function(x, x){});
-
-    framebuffer = createFramebuffer(gl, 200, 200);
-
-    // Precompute
-    gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
-    gl.useProgram(renderData.diffuseProgram);
-    gl.bindTexture(gl.TEXTURE_2D, renderData.environmentRadianceTexture);
-
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, renderData.indexBuffer);
-    gl.bindBuffer(gl.ARRAY_BUFFER, renderData.vertexBuffer);
-    gl.drawElements(gl.TRIANGLES, sphere_mesh.indices.length, gl.UNSIGNED_SHORT, 0);
-
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
     // Animate
     lastTime = 0.0;
     function frameWork(currentTime)
     {
-        var deltaTime = currentTime - lastTime;
+        let deltaTime = currentTime - lastTime;
 
-        var angleChange = deltaTime * 0.001;
-        vec3.rotateY(renderData.cameraPosition, renderData.cameraPosition, [0, 0, 0], angleChange);
-        quat.rotateY(renderData.cameraRotation, renderData.cameraRotation, angleChange);
+        let angleChange = deltaTime * 0.001;
+        let transform = renderData.camera.transform;
+        vec3.rotateY(transform.position, transform.position, [0, 0, 0], angleChange);
+        quat.rotateY(transform.rotation, transform.rotation, angleChange);
 
-        updateUniformData(renderData);
         drawScene(gl, renderData);
 
         lastTime = currentTime;
         requestAnimationFrame(frameWork);
     }
-
     requestAnimationFrame(frameWork);
-
 }
 
 window.onload = main;

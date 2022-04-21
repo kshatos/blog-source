@@ -30,13 +30,24 @@ function Transform()
 
     this.getMatrix = function() {
         let matrix = mat4.create();
-        fromRotationTranslationScale(
+        mat4.fromRotationTranslationScale(
             matrix,
             this.rotation, 
             this.position,
             this.scale);
         return matrix;
     }
+}
+
+function normalFromModelMatrix(modelMatrix)
+{
+    let normalMatrix3 = mat3.create();
+    let normalMatrix4 = mat4.create();
+    mat4.invert(normalMatrix4, modelMatrix);
+    mat4.transpose(normalMatrix4, normalMatrix4);
+    mat3.fromMat4(normalMatrix3, normalMatrix4);
+    
+    return normalMatrix3;
 }
 
 /***************************************
@@ -79,37 +90,28 @@ function Model(gl)
     this.transform = new Transform();
 }
 
-// DEPRECIATED
-function loadMeshFromObject(gl, meshData)
+/***************************************
+CAMERA
+***************************************/
+function PerspectiveCamera()
 {
-    meshBuffer = {
-        vertexBuffer: null,
-        indexBuffer: null
+    this.transform = new Transform();
+    this.fovy = Math.PI / 4;
+    this.aspect = 1.0;
+    this.near = 0.001;
+    this.far = 10.0;
+
+    this.viewMatrix = mat4.create();
+    this.projectionMatrix = mat4.create();
+
+
+    this.updateMatrices = function() {
+        mat4.perspective(this.projectionMatrix, this.fovy, this.aspect, this.near, this.far);
+        this.viewMatrix = this.transform.getMatrix();
+        mat4.invert(this.viewMatrix, this.viewMatrix);
     }
-
-    meshBuffer.vertexBuffer = gl.createBuffer(gl.ARRAY_BUFFER);
-    gl.bindBuffer(gl.ARRAY_BUFFER, meshBuffer.vertexBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(meshData.vertices), gl.STATIC_DRAW);
-
-    positionID = 0;
-    normalID = 1
-    uvID = 2;
-
-    gl.vertexAttribPointer(positionID, 3, gl.FLOAT, false, 4*8, 0);
-    gl.enableVertexAttribArray(positionID);
-
-    gl.vertexAttribPointer(normalID, 3, gl.FLOAT, false, 4*8, 4*3);
-    gl.enableVertexAttribArray(normalID);
-
-    gl.vertexAttribPointer(uvID, 2, gl.FLOAT, false, 4*8, 4*6);
-    gl.enableVertexAttribArray(uvID);
-
-    meshBuffer.indexBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, meshBuffer.indexBuffer);
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint16Array(meshData.indices), gl.STATIC_DRAW);
-
-    return meshBuffer;
 }
+
 
 /***************************************
 SHADER
@@ -175,42 +177,6 @@ function ShaderProgram(gl)
     }
 }
 
-// DEPRECIATED
-function compileShaderFromSource(gl, vertexSource, fragmentSource)
-{
-    vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexSource);
-    fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentSource);
-    var shaderProgram = createProgram(gl, vertexShader, fragmentShader);
-    return shaderProgram;
-}
-
-function compileShaderFromFiles(gl, vertexURL, fragmentURL)
-{
-    let shaderProgram = gl.createProgram();
-    var vertexShader;
-    var fragmentShader;
-
-    loadTextFile(vertexURL,
-        function(text)
-        {
-            vertexShader = createShader(gl, gl.VERTEX_SHADER, text);
-        }
-    );
-    loadTextFile(fragmentURL,
-        function(text)
-        {
-            fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, text);
-        }
-    );
-
-    gl.attachShader(shaderProgram, vertexShader);
-    gl.attachShader(shaderProgram, fragmentShader);
-    gl.linkProgram(shaderProgram);
-    
-    return shaderProgram;
-}
-
-
 /***************************************
 TEXTURES
 ***************************************/
@@ -263,54 +229,6 @@ function Texture2D(gl)
         gl.bindTexture(gl.TEXTURE_2D, this.texture);
     }
 
-}
-
-// DEPRECIATED
-function createNewTexture(gl, width=1, height=1)
-{
-    let texture = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, texture);
-
-    const level = 0;
-    const internalFormat = gl.RGBA;
-    const border = 0;
-    const srcFormat = gl.RGBA;
-    const srcType = gl.UNSIGNED_BYTE;
-    const pixel = new Uint8Array([0, 0, 255, 255]);
-
-    gl.texImage2D(
-        gl.TEXTURE_2D,
-        level, internalFormat,
-        width, height, border, 
-        srcFormat, srcType, pixel);
-
-    return texture;
-}
-
-function loadTextureFromImage(gl, texture, url, onLoad)
-{
-    const level = 0;
-    const internalFormat = gl.RGBA;
-    const srcFormat = gl.RGBA;
-    const srcType = gl.UNSIGNED_BYTE;
-
-    const image = new Image();
-    image.onload = function()
-    {
-        gl.bindTexture(gl.TEXTURE_2D, texture);
-        gl.texImage2D(
-            gl.TEXTURE_2D,
-            level, internalFormat,
-            srcFormat, srcType,
-            image);
-
-       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-
-       onLoad(image, texture);
-    }
-    image.src = url;
 }
 
 /***************************************
