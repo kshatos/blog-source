@@ -15,7 +15,7 @@ function RenderData(gl)
     this.evironmentRadianceTex = new Texture2D(gl);
     this.diffuseTex = new Texture2D(gl);
     this.prefilterTex = new Texture2D(gl);
-    this.lookupTex = new Texture2D(gl);
+    this.BRDFTex = new Texture2D(gl);
 
     // Camera
     this.camera = new PerspectiveCamera();
@@ -74,7 +74,7 @@ function drawOuterSphere(gl, renderData)
     if (shader.program == null) { return; }
 
     shader.use();
-    renderData.evironmentRadianceTex.use();
+    renderData.evironmentRadianceTex.use(gl.TEXTURE0);
 
     let modelMatrix = model.transform.getMatrix();
     let normalMatrix = normalFromModelMatrix(modelMatrix);
@@ -116,7 +116,9 @@ function drawMainSphere(gl, renderData)
     if (shader.program == null) { return; }
 
     shader.use();
-    renderData.evironmentRadianceTex.use(); // TODO ADD TEXTURE SLOT ARGUMENT
+    renderData.diffuseTex.use(gl.TEXTURE0);
+    renderData.prefilterTex.use(gl.TEXTURE1);
+    renderData.BRDFTex.use(gl.TEXTURE2);
 
     let modelMatrix = model.transform.getMatrix();
     let normalMatrix = normalFromModelMatrix(modelMatrix);
@@ -147,6 +149,12 @@ function drawMainSphere(gl, renderData)
 
     diffuseTexLoc = gl.getUniformLocation(shader.program, "u_diffuseEnvironmentTex");
     gl.uniform1i(diffuseTexLoc, 0);
+
+    prefilterTexLoc = gl.getUniformLocation(shader.program, "u_prefilterEnvironmentTex");
+    gl.uniform1i(prefilterTexLoc, 1);
+
+    brdftexLoc = gl.getUniformLocation(shader.program, "u_BRDFTex");
+    gl.uniform1i(brdftexLoc, 2);
 
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, model.mesh.indexBuffer);
     gl.bindBuffer(gl.ARRAY_BUFFER, model.mesh.vertexBuffer);
@@ -181,6 +189,7 @@ function main()
     // Initialize render data
     renderData = new RenderData(gl);
 
+    renderData.plane.mesh.loadMeshFromObject(planeMesh);
     renderData.mainSphere.mesh.loadMeshFromObject(sphereMesh);
     renderData.outerSphere.mesh.loadMeshFromObject(invertedSphereMesh);
     renderData.outerSphere.transform.scale = vec3.fromValues(30.0, 30.0, 30.0);
@@ -200,8 +209,16 @@ function main()
     const environmentImage = new Image();
     environmentImage.onload = function() {
         renderData.evironmentRadianceTex.loadFromImage(environmentImage);
+        renderData.diffuseTex.resize(environmentImage.width, environmentImage.height);
+        renderData.prefilterTex.resize(environmentImage.width, environmentImage.height);
     }
     environmentImage.src = "\\images\\Circus_Backstage_8k.jpg";
+
+    const brdfImage = new Image();
+    brdfImage.onload = function() {
+        renderData.BRDFTex.loadFromImage(brdfImage);
+    }
+    brdfImage.src = "\\images\\ibl_brdf_lut.png";
 
     initializeUniformData(renderData);
     initializeUI(renderData);

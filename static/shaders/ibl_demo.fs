@@ -115,6 +115,8 @@ uniform vec3 u_albedo;
 uniform float u_roughness;
 uniform float u_metallic;
 uniform sampler2D u_diffuseEnvironmentTex;
+uniform sampler2D u_prefilterEnvironmentTex;
+uniform sampler2D u_BRDFTex;
 
 varying vec3 Pos;
 varying vec3 Normal;
@@ -137,7 +139,7 @@ void main()
     vec3 kS = Fresnel_Schlick(cosNV, F0);
     vec3 kD = 1.0 - kS;
     vec3 enviromentDiffuse = texture2D(u_diffuseEnvironmentTex, longLatUV).rgb;
-
+    vec3 brdf = texture2D(u_BRDFTex, longLatUV).rgb;
     vec3 result = enviromentDiffuse * u_albedo * kD * 1.0;
 
     // HDR and gamma mapping

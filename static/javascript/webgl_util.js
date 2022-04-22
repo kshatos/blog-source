@@ -201,6 +201,10 @@ function Texture2D(gl)
         width, height, border, 
         srcFormat, srcType, pixel);
 
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+
     gl.bindTexture(gl.TEXTURE_2D, null);
 
 
@@ -216,19 +220,36 @@ function Texture2D(gl)
             level, internalFormat,
             srcFormat, srcType,
             image);
+            
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.bindTexture(gl.TEXTURE_2D, null);
+    }
 
-       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    this.resize = function(width, height)
+    {
+        const level = 0;
+        const internalFormat = gl.RGBA;
+        const border = 0;
+        const srcFormat = gl.RGBA;
+        const srcType = gl.UNSIGNED_BYTE;
+        let pixels = new Uint8Array(width * height * 4).fill(255);
 
+        gl.bindTexture(gl.TEXTURE_2D, this.texture);
+        gl.texImage2D(
+            gl.TEXTURE_2D,
+            level, internalFormat,
+            width, height, border, 
+            srcFormat, srcType, pixels);
        gl.bindTexture(gl.TEXTURE_2D, null);
     }
 
-    this.use = function()
+    this.use = function(slot)
     {
+        gl.activeTexture(slot);
         gl.bindTexture(gl.TEXTURE_2D, this.texture);
     }
-
 }
 
 /***************************************
