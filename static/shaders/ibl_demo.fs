@@ -114,6 +114,7 @@ vec3 PointLightReflectedRadiance(
 uniform vec3 u_albedo;
 uniform float u_roughness;
 uniform float u_metallic;
+uniform sampler2D u_diffuseEnvironmentTex;
 
 varying vec3 Pos;
 varying vec3 Normal;
@@ -121,5 +122,27 @@ varying vec3 Normal;
 
 void main()
 {
-    gl_FragColor = vec4(Normal, 1.0);
+    vec3 normal = normalize(Normal);
+    vec3 view = normalize(u_viewPos - Pos);
+
+    vec2 longLatUV = vec2(0.0, 0.0);
+    longLatUV.x = atan(normal.z, normal.x) / (2.0 * PI);
+    longLatUV.x = longLatUV.x < 0.0 ? longLatUV.x + 1.0 : longLatUV.x;
+    longLatUV.y = acos(normal.y) / PI;
+    longLatUV.y = longLatUV.y < 0.0 ? longLatUV.y + 1.0 : longLatUV.y;
+
+    vec3 F0 = mix(vec3(0.04), u_albedo, u_metallic);
+    float cosNV = max(dot(-normal, view), 0.0);
+
+    vec3 kS = Fresnel_Schlick(cosNV, F0);
+    vec3 kD = 1.0 - kS;
+    vec3 enviromentDiffuse = texture2D(u_diffuseEnvironmentTex, longLatUV).rgb;
+
+    vec3 result = enviromentDiffuse * u_albedo * kD * 1.0;
+
+    // HDR and gamma mapping
+    result = result / (result + vec3(1.0));
+    result = pow(result, vec3(1.0/2.2)); 
+
+    gl_FragColor = vec4(result, 1.0);
 }

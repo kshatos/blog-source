@@ -116,7 +116,7 @@ function drawMainSphere(gl, renderData)
     if (shader.program == null) { return; }
 
     shader.use();
-    renderData.evironmentRadianceTex.use();
+    renderData.evironmentRadianceTex.use(); // TODO ADD TEXTURE SLOT ARGUMENT
 
     let modelMatrix = model.transform.getMatrix();
     let normalMatrix = normalFromModelMatrix(modelMatrix);
@@ -144,6 +144,9 @@ function drawMainSphere(gl, renderData)
 
     roughnessLoc = gl.getUniformLocation(shader.program, "u_roughness");
     gl.uniform1f(roughnessLoc, renderData.roughness);
+
+    diffuseTexLoc = gl.getUniformLocation(shader.program, "u_diffuseEnvironmentTex");
+    gl.uniform1i(diffuseTexLoc, 0);
 
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, model.mesh.indexBuffer);
     gl.bindBuffer(gl.ARRAY_BUFFER, model.mesh.vertexBuffer);
