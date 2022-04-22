@@ -4,10 +4,12 @@ function RenderData(gl)
 {
     // Mesh
     this.mainSphere = new Model(gl);
-    this.outerSphere = Model(gl);
+    this.outerSphere = new Model(gl);
+    this.plane = new Model(gl);
 
     // Shaders
     this.IBLShader = new ShaderProgram(gl);
+    this.outerSphereShader = new ShaderProgram(gl);
 
     // Texture
     this.evironmentRadianceTex = new Texture2D(gl);
@@ -28,7 +30,7 @@ function initializeUniformData(renderData)
     vec3.add(
         renderData.camera.transform.position,
         renderData.camera.transform.position,
-        [0.0, 0.0, 5.0]);
+        [0.0, 0.0, 10.0]);
 }
 
 function initializeUI(renderData)
@@ -62,6 +64,48 @@ function initializeUI(renderData)
     roughnessSlider.oninput = function() {
         renderData.roughness = roughnessSlider.value;
     }
+}
+
+function drawOuterSphere(gl, renderData)
+{
+    let shader = renderData.outerSphereShader;
+    let model = renderData.outerSphere;
+
+    if (shader.program == null) { return; }
+
+    shader.use();
+    renderData.evironmentRadianceTex.use();
+
+    let modelMatrix = model.transform.getMatrix();
+    let normalMatrix = normalFromModelMatrix(modelMatrix);
+
+    normalMatLoc = gl.getUniformLocation(shader.program, "u_NormalMatrix");
+    gl.uniformMatrix3fv(normalMatLoc, false, normalMatrix);
+
+    modelMatLoc = gl.getUniformLocation(shader.program, "u_ModelMatrix");
+    gl.uniformMatrix4fv(modelMatLoc, false, modelMatrix);
+    
+    viewMatLoc = gl.getUniformLocation(shader.program, "u_ViewMatrix");
+    gl.uniformMatrix4fv(viewMatLoc, false, renderData.camera.viewMatrix);
+
+    projMatLoc = gl.getUniformLocation(shader.program, "u_ProjectionMatrix");
+    gl.uniformMatrix4fv(projMatLoc, false, renderData.camera.projectionMatrix);
+
+    cameraPosLoc = gl.getUniformLocation(shader.program, "u_viewPos");
+    gl.uniform3fv(cameraPosLoc, renderData.camera.transform.position);
+
+    albedoLoc = gl.getUniformLocation(shader.program, "u_albedo");
+    gl.uniform3fv(albedoLoc, renderData.albedo);
+
+    metallicLoc = gl.getUniformLocation(shader.program, "u_metallic");
+    gl.uniform1f(metallicLoc, renderData.metallic);
+
+    roughnessLoc = gl.getUniformLocation(shader.program, "u_roughness");
+    gl.uniform1f(roughnessLoc, renderData.roughness);
+
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, model.mesh.indexBuffer);
+    gl.bindBuffer(gl.ARRAY_BUFFER, model.mesh.vertexBuffer);
+    gl.drawElements(gl.TRIANGLES, sphereMesh.indices.length, gl.UNSIGNED_SHORT, 0);
 }
 
 function drawMainSphere(gl, renderData)
@@ -103,7 +147,7 @@ function drawMainSphere(gl, renderData)
 
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, model.mesh.indexBuffer);
     gl.bindBuffer(gl.ARRAY_BUFFER, model.mesh.vertexBuffer);
-    gl.drawElements(gl.TRIANGLES, sphere_mesh.indices.length, gl.UNSIGNED_SHORT, 0);
+    gl.drawElements(gl.TRIANGLES, sphereMesh.indices.length, gl.UNSIGNED_SHORT, 0);
 }
 
 function drawScene(gl, renderData)
@@ -111,8 +155,7 @@ function drawScene(gl, renderData)
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT || gl.DEPTH_BUFFER_BIT);
 
-    renderData.camera.updateMatrices();
-
+    drawOuterSphere(gl, renderData)
     drawMainSphere(gl, renderData);
 }
 
@@ -135,11 +178,19 @@ function main()
     // Initialize render data
     renderData = new RenderData(gl);
 
-    renderData.mainSphere.mesh.loadMeshFromObject(sphere_mesh);
+    renderData.mainSphere.mesh.loadMeshFromObject(sphereMesh);
+    renderData.outerSphere.mesh.loadMeshFromObject(invertedSphereMesh);
+    renderData.outerSphere.transform.scale = vec3.fromValues(30.0, 30.0, 30.0);
+
+    loadTextFile("\\shaders\\ibl_demo.vs", function(vertexSource) {
+        loadTextFile("\\shaders\\ibl_demo.fs", function(fragmentSource) {
+            renderData.IBLShader.compileFromSource(vertexSource, fragmentSource);
+        });
+    });
 
     loadTextFile("\\shaders\\projection.vs", function(vertexSource) {
         loadTextFile("\\shaders\\projection.fs", function(fragmentSource) {
-            renderData.IBLShader.compileFromSource(vertexSource, fragmentSource);
+            renderData.outerSphereShader.compileFromSource(vertexSource, fragmentSource);
         });
     });
 
@@ -158,10 +209,11 @@ function main()
     {
         let deltaTime = currentTime - lastTime;
 
-        let angleChange = deltaTime * 0.001;
+        let angleChange = deltaTime * 0.0005;
         let transform = renderData.camera.transform;
         vec3.rotateY(transform.position, transform.position, [0, 0, 0], angleChange);
         quat.rotateY(transform.rotation, transform.rotation, angleChange);
+        renderData.camera.updateMatrices();
 
         drawScene(gl, renderData);
 

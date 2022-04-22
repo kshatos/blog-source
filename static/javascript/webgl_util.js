@@ -99,7 +99,7 @@ function PerspectiveCamera()
     this.fovy = Math.PI / 4;
     this.aspect = 1.0;
     this.near = 0.001;
-    this.far = 10.0;
+    this.far = 50.0;
 
     this.viewMatrix = mat4.create();
     this.projectionMatrix = mat4.create();

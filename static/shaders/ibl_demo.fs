@@ -121,33 +121,5 @@ varying vec3 Normal;
 
 void main()
 {
-    PointLight light;
-    light.radiantFlux = 3000.0;
-    light.range = 100.0;
-    light.color = vec3(1.0, 1.0, 1.0);
-
-    PBRSurfaceData surface;
-    surface.position = Pos;
-    surface.normal = normalize(Normal);
-    surface.albedo = u_albedo;
-    surface.metallic = u_metallic;
-    surface.roughness = u_roughness * u_roughness;
-
-    vec3 result = vec3(0.0, 0.0, 0.0);
-
-    light.position = vec3(0.0, -1.0, 10.0);
-    result = PointLightReflectedRadiance(light, surface);
-
-    light.position = vec3(1.0, 1.0, 10.0);
-    result += PointLightReflectedRadiance(light, surface);
-
-    light.position = vec3(-1.0, 1.0, 10.0);
-    result += PointLightReflectedRadiance(light, surface);
-
-    result += 0.2 * surface.albedo;
-
-    result = result / (result + vec3(1.0));
-    result = pow(result, vec3(1.0/2.2)); 
-
-    gl_FragColor = vec4(result, 1.0);
+    gl_FragColor = vec4(Normal, 1.0);
 }
