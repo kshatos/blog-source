@@ -21,6 +21,11 @@ function RenderData(gl)
     this.camera = new PerspectiveCamera();
 }
 
+function rotateFromZUpToYUp(transform)
+{
+    quat.rotateX(transform.rotation, transform.rotation, 0.5 * Math.PI);
+}
+
 function initializeUniformData(renderData)
 {
     renderData.albedo = [0.0, 0.0, 0.0]
@@ -105,7 +110,24 @@ function drawOuterSphere(gl, renderData)
 
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, model.mesh.indexBuffer);
     gl.bindBuffer(gl.ARRAY_BUFFER, model.mesh.vertexBuffer);
+
+    positionID = 0;
+    normalID = 1
+    uvID = 2;
+
+    gl.vertexAttribPointer(positionID, 3, gl.FLOAT, false, 4*8, 0);
+    gl.enableVertexAttribArray(positionID);
+
+    gl.vertexAttribPointer(normalID, 3, gl.FLOAT, false, 4*8, 4*3);
+    gl.enableVertexAttribArray(normalID);
+
+    gl.vertexAttribPointer(uvID, 2, gl.FLOAT, false, 4*8, 4*6);
+    gl.enableVertexAttribArray(uvID);
+
     gl.drawElements(gl.TRIANGLES, sphereMesh.indices.length, gl.UNSIGNED_SHORT, 0);
+
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+    gl.bindBuffer(gl.ARRAY_BUFFER, null);
 }
 
 function drawMainSphere(gl, renderData)
@@ -158,7 +180,24 @@ function drawMainSphere(gl, renderData)
 
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, model.mesh.indexBuffer);
     gl.bindBuffer(gl.ARRAY_BUFFER, model.mesh.vertexBuffer);
+
+    positionID = 0;
+    normalID = 1
+    uvID = 2;
+
+    gl.vertexAttribPointer(positionID, 3, gl.FLOAT, false, 4*8, 0);
+    gl.enableVertexAttribArray(positionID);
+
+    gl.vertexAttribPointer(normalID, 3, gl.FLOAT, false, 4*8, 4*3);
+    gl.enableVertexAttribArray(normalID);
+
+    gl.vertexAttribPointer(uvID, 2, gl.FLOAT, false, 4*8, 4*6);
+    gl.enableVertexAttribArray(uvID);
+
     gl.drawElements(gl.TRIANGLES, sphereMesh.indices.length, gl.UNSIGNED_SHORT, 0);
+
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+    gl.bindBuffer(gl.ARRAY_BUFFER, null);
 }
 
 function drawScene(gl, renderData)
@@ -185,14 +224,19 @@ function main()
     gl.enable(gl.DEPTH_TEST);
     gl.depthFunc(gl.LEQUAL);
     gl.cullFace(gl.BACK);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 
     // Initialize render data
     renderData = new RenderData(gl);
 
     renderData.plane.mesh.loadMeshFromObject(planeMesh);
-    renderData.mainSphere.mesh.loadMeshFromObject(sphereMesh);
+
     renderData.outerSphere.mesh.loadMeshFromObject(invertedSphereMesh);
+    rotateFromZUpToYUp(renderData.outerSphere.transform);
     renderData.outerSphere.transform.scale = vec3.fromValues(30.0, 30.0, 30.0);
+
+    renderData.mainSphere.mesh.loadMeshFromObject(sphereMesh);
+    rotateFromZUpToYUp(renderData.mainSphere.transform);
 
     loadTextFile("\\shaders\\ibl_demo.vs", function(vertexSource) {
         loadTextFile("\\shaders\\ibl_demo.fs", function(fragmentSource) {
@@ -209,10 +253,17 @@ function main()
     const environmentImage = new Image();
     environmentImage.onload = function() {
         renderData.evironmentRadianceTex.loadFromImage(environmentImage);
-        renderData.diffuseTex.resize(environmentImage.width, environmentImage.height);
-        renderData.prefilterTex.resize(environmentImage.width, environmentImage.height);
+        environmentImage.y
+        //renderData.diffuseTex.resize(environmentImage.width, environmentImage.height);
+        renderData.prefilterTex.loadFromImage(environmentImage);
     }
-    environmentImage.src = "\\images\\Circus_Backstage_8k.jpg";
+    environmentImage.src = "\\images\\ibl_hdr_radiance.png";
+
+    const irradianceImage = new Image();
+    irradianceImage.onload = function() {
+        renderData.diffuseTex.loadFromImage(irradianceImage);
+    }
+    irradianceImage.src = "\\images\\ibl_hdr_irradiance.jpg";
 
     const brdfImage = new Image();
     brdfImage.onload = function() {

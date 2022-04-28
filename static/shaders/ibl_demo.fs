@@ -114,12 +114,14 @@ vec3 PointLightReflectedRadiance(
 uniform vec3 u_albedo;
 uniform float u_roughness;
 uniform float u_metallic;
+
 uniform sampler2D u_diffuseEnvironmentTex;
 uniform sampler2D u_prefilterEnvironmentTex;
 uniform sampler2D u_BRDFTex;
 
 varying vec3 Pos;
 varying vec3 Normal;
+varying vec2 UV;
 
 
 void main()
@@ -128,19 +130,28 @@ void main()
     vec3 view = normalize(u_viewPos - Pos);
 
     vec2 longLatUV = vec2(0.0, 0.0);
-    longLatUV.x = atan(normal.z, normal.x) / (2.0 * PI);
+    longLatUV.x = (normal.x == 0.0) ? 0.0 : atan(-normal.z, normal.x) / (2.0 * PI);
     longLatUV.x = longLatUV.x < 0.0 ? longLatUV.x + 1.0 : longLatUV.x;
-    longLatUV.y = acos(normal.y) / PI;
+    longLatUV.y = acos(-normal.y) / PI;
     longLatUV.y = longLatUV.y < 0.0 ? longLatUV.y + 1.0 : longLatUV.y;
 
     vec3 F0 = mix(vec3(0.04), u_albedo, u_metallic);
-    float cosNV = max(dot(-normal, view), 0.0);
+    float cosNV = max(dot(normal, view), 0.0);
 
-    vec3 kS = Fresnel_Schlick(cosNV, F0);
+    vec3 F = Fresnel_Schlick(cosNV, F0);
+    vec3 kS = F;
     vec3 kD = 1.0 - kS;
-    vec3 enviromentDiffuse = texture2D(u_diffuseEnvironmentTex, longLatUV).rgb;
-    vec3 brdf = texture2D(u_BRDFTex, longLatUV).rgb;
-    vec3 result = enviromentDiffuse * u_albedo * kD * 1.0;
+    kD *= 1.0 - u_metallic;
+
+    vec3 irradiance = texture2D(u_diffuseEnvironmentTex, longLatUV).rgb;
+    vec3 diffuse = irradiance * u_albedo;
+
+    const float MAX_REFLECTION_LOD = 4.0;
+    vec3 prefilteredColor = texture2D(u_prefilterEnvironmentTex, longLatUV).rgb;
+    vec2 envBRDF  = texture2D(u_BRDFTex, vec2(cosNV, u_roughness)).rg;
+    vec3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
+    
+    vec3 result = (kD * diffuse + specular); 
 
     // HDR and gamma mapping
     result = result / (result + vec3(1.0));

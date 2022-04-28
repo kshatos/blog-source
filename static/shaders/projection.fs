@@ -13,12 +13,13 @@ varying vec3 UV;
 
 void main()
 {
-    vec3 normal = normalize(Normal);
+    vec3 direction = normalize(Pos);
     vec2 uv = vec2(0.0, 0.0);
-    uv.x = 0.5 * atan(normal.x, normal.z) / PI;
-    uv.x = (uv.x>0.0) ? uv.x : uv.x + 1.0;
-    uv.y = 0.5 * (normal.y + 1.0);
+    uv.x = (direction.x == 0.0) ? 0.0 : 0.5 * atan(-direction.z, direction.x) / PI;
+    uv.x = (uv.x > 0.0) ? uv.x : uv.x + 1.0;
+    uv.y = acos(-direction.y) / PI;
+    uv.y = uv.y < 0.0 ? uv.y + 1.0 : uv.y;
 
-    vec4 color = texture2D(tex, uv);
-    gl_FragColor = vec4(color.xyz, 1.0);
+    vec3 color = texture2D(tex, uv).rgb;
+    gl_FragColor = vec4(color, 1.0);
 }

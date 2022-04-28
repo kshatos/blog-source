@@ -55,32 +55,19 @@ MESH
 ***************************************/
 function Mesh(gl)
 {
-    this.vertexBuffer = gl.createBuffer(gl.ARRAY_BUFFER);
-    this.indexBuffer = gl.createBuffer(gl.ELEMENT_ARRAY_BUFFER);
+    this.vertexBuffer = null;
+    this.indexBuffer = null;
 
     this.loadMeshFromObject = function(meshData) {
+        this.vertexBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(meshData.vertices), gl.STATIC_DRAW);
-
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(meshData.vertices), gl.STATIC_DRAW);
-
-        positionID = 0;
-        normalID = 1
-        uvID = 2;
-
-        gl.vertexAttribPointer(positionID, 3, gl.FLOAT, false, 4*8, 0);
-        gl.enableVertexAttribArray(positionID);
-
-        gl.vertexAttribPointer(normalID, 3, gl.FLOAT, false, 4*8, 4*3);
-        gl.enableVertexAttribArray(normalID);
-
-        gl.vertexAttribPointer(uvID, 2, gl.FLOAT, false, 4*8, 4*6);
-        gl.enableVertexAttribArray(uvID);
+        gl.bindBuffer(gl.ARRAY_BUFFER, null);
 
         this.indexBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint16Array(meshData.indices), gl.STATIC_DRAW);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
     }
 }
 
@@ -117,7 +104,7 @@ function PerspectiveCamera()
 SHADER
 ***************************************/
 function loadTextFile(url, callback) {
-    var request = new XMLHttpRequest();
+    let request = new XMLHttpRequest();
     request.open('GET', url, true);
     request.addEventListener('load', function() {
         callback(request.responseText);
@@ -127,10 +114,10 @@ function loadTextFile(url, callback) {
 
 function createShader(gl, type, source)
 {
-    var shader = gl.createShader(type);
+    let shader = gl.createShader(type);
     gl.shaderSource(shader, source);
     gl.compileShader(shader);
-    var success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
+    let success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
     if (success)
     {
       return shader;
@@ -142,7 +129,7 @@ function createShader(gl, type, source)
 
 function createProgram(gl, vertexShader, fragmentShader) {
     // create a program.
-    var program = gl.createProgram();
+    let program = gl.createProgram();
    
     // attach the shaders.
     gl.attachShader(program, vertexShader);
@@ -152,7 +139,7 @@ function createProgram(gl, vertexShader, fragmentShader) {
     gl.linkProgram(program);
    
     // Check if it linked.
-    var success = gl.getProgramParameter(program, gl.LINK_STATUS);
+    let success = gl.getProgramParameter(program, gl.LINK_STATUS);
     if (!success) {
         // something went wrong with the link
         throw ("program failed to link:" + gl.getProgramInfoLog (program));
@@ -266,7 +253,7 @@ function createFramebuffer(gl, width, height)
     gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, colorTexture, 0);
 
-    var fbStatus = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+    let fbStatus = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
     if (gl.FRAMEBUFFER_COMPLETE !== fbStatus) {
       console.log('Frame buffer object is incomplete: ' + fbStatus.toString());
       return error();
