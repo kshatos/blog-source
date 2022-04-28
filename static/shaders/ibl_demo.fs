@@ -136,7 +136,7 @@ void main()
     longLatUV.y = longLatUV.y < 0.0 ? longLatUV.y + 1.0 : longLatUV.y;
 
     vec3 F0 = mix(vec3(0.04), u_albedo, u_metallic);
-    float cosNV = max(dot(normal, view), 0.0);
+    float cosNV = clamp(dot(normal, view), 0.0, 1.0);
 
     vec3 F = Fresnel_Schlick(cosNV, F0);
     vec3 kS = F;
@@ -148,7 +148,8 @@ void main()
 
     const float MAX_REFLECTION_LOD = 4.0;
     vec3 prefilteredColor = texture2D(u_prefilterEnvironmentTex, longLatUV).rgb;
-    vec2 envBRDF  = texture2D(u_BRDFTex, vec2(cosNV, u_roughness)).rg;
+    vec2 lutUV = vec2(cosNV, u_roughness);
+    vec2 envBRDF  = texture2D(u_BRDFTex, lutUV).rg;
     vec3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
     
     vec3 result = (kD * diffuse + specular); 
