@@ -191,9 +191,9 @@ function Texture2D(gl)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 
     gl.bindTexture(gl.TEXTURE_2D, null);
-
 
     this.loadFromImage = function(image) {
         const level = 0;
@@ -215,7 +215,7 @@ function Texture2D(gl)
         gl.bindTexture(gl.TEXTURE_2D, null);
     }
 
-    this.resize = function(width, height)
+    this.resize = function(width, height, generateMips=false)
     {
         const level = 0;
         const internalFormat = gl.RGBA;
@@ -230,6 +230,20 @@ function Texture2D(gl)
             level, internalFormat,
             width, height, border, 
             srcFormat, srcType, pixels);
+
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+        if (generateMips)
+        {
+            gl.generateMipmap(gl.TEXTURE_2D);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.MIPMAP_LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.MIPMAP_LINEAR);
+        }
+
+        
        gl.bindTexture(gl.TEXTURE_2D, null);
     }
 

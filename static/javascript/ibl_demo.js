@@ -10,6 +10,7 @@ function RenderData(gl)
     // Shaders
     this.IBLShader = new ShaderProgram(gl);
     this.outerSphereShader = new ShaderProgram(gl);
+    this.diffuseIntegrationShader = new ShaderProgram(gl);
 
     // Texture
     this.evironmentRadianceTex = new Texture2D(gl);
@@ -181,9 +182,9 @@ function drawMainSphere(gl, renderData)
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, model.mesh.indexBuffer);
     gl.bindBuffer(gl.ARRAY_BUFFER, model.mesh.vertexBuffer);
 
-    positionID = 0;
-    normalID = 1
-    uvID = 2;
+    let positionID = 0;
+    let normalID = 1
+    let uvID = 2;
 
     gl.vertexAttribPointer(positionID, 3, gl.FLOAT, false, 4*8, 0);
     gl.enableVertexAttribArray(positionID);
@@ -207,6 +208,44 @@ function drawScene(gl, renderData)
 
     drawOuterSphere(gl, renderData)
     drawMainSphere(gl, renderData);
+}
+
+function integrateDiffuse(gl, renderData)
+{
+    gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT || gl.DEPTH_BUFFER_BIT);
+
+    let shader = renderData.diffuseIntegrationShader;
+    let model = renderData.plane;
+
+    if (shader.program == null) { return; }
+
+    shader.use();
+    renderData.evironmentRadianceTex.use(gl.TEXTURE0);
+
+    envTexLoc = gl.getUniformLocation(shader.program, "u_EnvironmentTexture");
+    gl.uniform1i(envTexLoc, 0);
+
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, model.mesh.indexBuffer);
+    gl.bindBuffer(gl.ARRAY_BUFFER, model.mesh.vertexBuffer);
+
+    let positionID = 0;
+    let normalID = 1
+    let uvID = 2;
+
+    gl.vertexAttribPointer(positionID, 3, gl.FLOAT, false, 4*8, 0);
+    gl.enableVertexAttribArray(positionID);
+
+    gl.vertexAttribPointer(normalID, 3, gl.FLOAT, false, 4*8, 4*3);
+    gl.enableVertexAttribArray(normalID);
+
+    gl.vertexAttribPointer(uvID, 2, gl.FLOAT, false, 4*8, 4*6);
+    gl.enableVertexAttribArray(uvID);
+
+    gl.drawElements(gl.TRIANGLES, planeMesh.indices.length, gl.UNSIGNED_SHORT, 0);
+
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+    gl.bindBuffer(gl.ARRAY_BUFFER, null);
 }
 
 
@@ -250,20 +289,28 @@ function main()
         });
     });
 
+    loadTextFile("\\shaders\\diffuse_integration.vs", function(vertexSource) {
+        loadTextFile("\\shaders\\diffuse_integration.fs", function(fragmentSource) {
+            renderData.diffuseIntegrationShader.compileFromSource(vertexSource, fragmentSource);
+        });
+    });
+
     const environmentImage = new Image();
     environmentImage.onload = function() {
         renderData.evironmentRadianceTex.loadFromImage(environmentImage);
         environmentImage.y
-        //renderData.diffuseTex.resize(environmentImage.width, environmentImage.height);
+        renderData.diffuseTex.resize(256, 256);
         renderData.prefilterTex.loadFromImage(environmentImage);
     }
     environmentImage.src = "\\images\\ibl_hdr_radiance.png";
 
+    /*
     const irradianceImage = new Image();
     irradianceImage.onload = function() {
         renderData.diffuseTex.loadFromImage(irradianceImage);
     }
     irradianceImage.src = "\\images\\ibl_hdr_irradiance.jpg";
+    */
 
     const brdfImage = new Image();
     brdfImage.onload = function() {
@@ -286,7 +333,8 @@ function main()
         quat.rotateY(transform.rotation, transform.rotation, angleChange);
         renderData.camera.updateMatrices();
 
-        drawScene(gl, renderData);
+        integrateDiffuse(gl, renderData);
+        //drawScene(gl, renderData);
 
         lastTime = currentTime;
         requestAnimationFrame(frameWork);
