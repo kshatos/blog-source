@@ -51,7 +51,5 @@ void main()
     }
     irradiance = PI * irradiance * (1.0 / (nXSamples * nYSamples));
 
-    vec3 sample = texture2D(u_EnvironmentTexture, v_UV).xyz;
-
     gl_FragColor = vec4(irradiance, 1.0);
 }

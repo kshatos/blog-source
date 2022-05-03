@@ -1,4 +1,5 @@
 #version 100
+#extension GL_EXT_shader_texture_lod : enable
 precision mediump float;
 
 const float PI = 3.14159265359;
@@ -43,6 +44,11 @@ vec3 Fresnel_Schlick(float cosVH, vec3 F0)
 {
     return F0 + (1.0 - F0) * pow(1.0 - cosVH, 5.0);
 }
+
+vec3 fresnelSchlickRoughness(float cosVH, vec3 F0, float roughness)
+{
+    return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(clamp(1.0 - cosVH, 0.0, 1.0), 5.0);
+}   
 
 vec3 BRDF(
     vec3 viewDir,
@@ -126,8 +132,10 @@ varying vec2 UV;
 
 void main()
 {
+    // Camera object geometry
     vec3 normal = normalize(Normal);
     vec3 view = normalize(u_viewPos - Pos);
+    vec3 reflected = reflect(-view, normal);
 
     vec2 longLatUV = vec2(0.0, 0.0);
     longLatUV.x = (normal.x == 0.0) ? 0.0 : atan(-normal.z, normal.x) / (2.0 * PI);
@@ -135,24 +143,30 @@ void main()
     longLatUV.y = acos(-normal.y) / PI;
     longLatUV.y = longLatUV.y < 0.0 ? longLatUV.y + 1.0 : longLatUV.y;
 
+    vec2 reflectedUV = vec2(0.0, 0.0);
+    reflectedUV.x = (reflected.x == 0.0) ? 0.0 : atan(-reflected.z, reflected.x) / (2.0 * PI);
+    reflectedUV.x = reflectedUV.x < 0.0 ? reflectedUV.x + 1.0 : reflectedUV.x;
+    reflectedUV.y = acos(-reflected.y) / PI;
+    reflectedUV.y = reflectedUV.y < 0.0 ? reflectedUV.y + 1.0 : reflectedUV.y;
+
+    // Lighting calculations
     vec3 F0 = mix(vec3(0.04), u_albedo, u_metallic);
     float cosNV = clamp(dot(normal, view), 0.0, 1.0);
 
-    vec3 F = Fresnel_Schlick(cosNV, F0);
+    vec3 F = fresnelSchlickRoughness(cosNV, F0, u_roughness);
     vec3 kS = F;
     vec3 kD = 1.0 - kS;
     kD *= 1.0 - u_metallic;
-
+    
     vec3 irradiance = texture2D(u_diffuseEnvironmentTex, longLatUV).rgb;
     vec3 diffuse = irradiance * u_albedo;
 
     const float MAX_REFLECTION_LOD = 4.0;
-    vec3 prefilteredColor = texture2D(u_prefilterEnvironmentTex, longLatUV).rgb;
-    vec2 lutUV = vec2(cosNV, u_roughness);
-    vec2 envBRDF  = texture2D(u_BRDFTex, lutUV).rg;
-    vec3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
-    
-    vec3 result = (kD * diffuse + specular); 
+    vec3 prefilteredColor = texture2DLodEXT(
+        u_prefilterEnvironmentTex, reflectedUV,  5.0).rgb;
+    vec2 brdf  = texture2D(u_BRDFTex, vec2(cosNV, u_roughness)).rg;
+    vec3 specular = prefilteredColor * (F * brdf.x + brdf.y);
+    vec3 result =  (kD * diffuse + specular);
 
     // HDR and gamma mapping
     result = result / (result + vec3(1.0));

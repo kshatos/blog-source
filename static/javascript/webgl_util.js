@@ -173,8 +173,8 @@ function Texture2D(gl)
     gl.bindTexture(gl.TEXTURE_2D, this.texture);
 
     // Fill with one blue pixel so state is valid to use
-    const width = 1;
-    const height = 1;
+    this.width = 1;
+    this.height = 1;
     const level = 0;
     const internalFormat = gl.RGBA;
     const border = 0;
@@ -185,7 +185,7 @@ function Texture2D(gl)
     gl.texImage2D(
         gl.TEXTURE_2D,
         level, internalFormat,
-        width, height, border, 
+        this.width, this.height, border, 
         srcFormat, srcType, pixel);
 
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
@@ -200,6 +200,8 @@ function Texture2D(gl)
         const internalFormat = gl.RGBA;
         const srcFormat = gl.RGBA;
         const srcType = gl.UNSIGNED_BYTE;
+        this.width = image.width;
+        this.height = image.height;
 
         gl.bindTexture(gl.TEXTURE_2D, this.texture);
         gl.texImage2D(
@@ -230,6 +232,8 @@ function Texture2D(gl)
             level, internalFormat,
             width, height, border, 
             srcFormat, srcType, pixels);
+        this.width = width;
+        this.height = height;
 
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
@@ -247,10 +251,37 @@ function Texture2D(gl)
        gl.bindTexture(gl.TEXTURE_2D, null);
     }
 
+    this.generateMipmaps = function()
+    {
+        gl.bindTexture(gl.TEXTURE_2D, this.texture);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+        gl.generateMipmap(gl.TEXTURE_2D);
+        gl.bindTexture(gl.TEXTURE_2D, null);
+    }
+
     this.use = function(slot)
     {
         gl.activeTexture(slot);
         gl.bindTexture(gl.TEXTURE_2D, this.texture);
+    }
+
+    this.renderTo = function(gl, drawCallback, mipLevel=0)
+    {
+        let fb = gl.createFramebuffer();
+        gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+        gl.bindTexture(gl.TEXTURE_2D, this.texture);
+        gl.framebufferTexture2D(
+            gl.FRAMEBUFFER,
+            gl.COLOR_ATTACHMENT0,
+            gl.TEXTURE_2D,
+            this.texture,
+            mipLevel);
+        gl.bindTexture(gl.TEXTURE_2D, null);
+        gl.viewport(0, 0, this.width, this.height);
+        
+        drawCallback();
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     }
 }
 

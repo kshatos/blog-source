@@ -97,17 +97,8 @@ function drawOuterSphere(gl, renderData)
     projMatLoc = gl.getUniformLocation(shader.program, "u_ProjectionMatrix");
     gl.uniformMatrix4fv(projMatLoc, false, renderData.camera.projectionMatrix);
 
-    cameraPosLoc = gl.getUniformLocation(shader.program, "u_viewPos");
-    gl.uniform3fv(cameraPosLoc, renderData.camera.transform.position);
-
-    albedoLoc = gl.getUniformLocation(shader.program, "u_albedo");
-    gl.uniform3fv(albedoLoc, renderData.albedo);
-
-    metallicLoc = gl.getUniformLocation(shader.program, "u_metallic");
-    gl.uniform1f(metallicLoc, renderData.metallic);
-
-    roughnessLoc = gl.getUniformLocation(shader.program, "u_roughness");
-    gl.uniform1f(roughnessLoc, renderData.roughness);
+    textureLoc = gl.getUniformLocation(shader.program, "tex");
+    gl.uniform1i(textureLoc, 0);
 
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, model.mesh.indexBuffer);
     gl.bindBuffer(gl.ARRAY_BUFFER, model.mesh.vertexBuffer);
@@ -260,6 +251,7 @@ function main()
       return;
     }
 
+    gl.getExtension('EXT_shader_texture_lod');
     gl.enable(gl.DEPTH_TEST);
     gl.depthFunc(gl.LEQUAL);
     gl.cullFace(gl.BACK);
@@ -276,6 +268,7 @@ function main()
 
     renderData.mainSphere.mesh.loadMeshFromObject(sphereMesh);
     rotateFromZUpToYUp(renderData.mainSphere.transform);
+    renderData.mainSphere.transform.scale = vec3.fromValues(2.0, 2.0, 2.0);
 
     loadTextFile("\\shaders\\ibl_demo.vs", function(vertexSource) {
         loadTextFile("\\shaders\\ibl_demo.fs", function(fragmentSource) {
@@ -292,25 +285,18 @@ function main()
     loadTextFile("\\shaders\\diffuse_integration.vs", function(vertexSource) {
         loadTextFile("\\shaders\\diffuse_integration.fs", function(fragmentSource) {
             renderData.diffuseIntegrationShader.compileFromSource(vertexSource, fragmentSource);
+
+            const environmentImage = new Image();
+            environmentImage.onload = function() {
+                renderData.evironmentRadianceTex.loadFromImage(environmentImage);
+                renderData.evironmentRadianceTex.generateMipmaps();
+                renderData.prefilterTex.loadFromImage(environmentImage);
+                renderData.diffuseTex.resize(1024, 1024);
+                renderData.diffuseTex.renderTo(gl, function() { integrateDiffuse(gl, renderData); });
+            }
+            environmentImage.src = "\\images\\Circus_Backstage_8k.jpg";
         });
     });
-
-    const environmentImage = new Image();
-    environmentImage.onload = function() {
-        renderData.evironmentRadianceTex.loadFromImage(environmentImage);
-        environmentImage.y
-        renderData.diffuseTex.resize(256, 256);
-        renderData.prefilterTex.loadFromImage(environmentImage);
-    }
-    environmentImage.src = "\\images\\ibl_hdr_radiance.png";
-
-    /*
-    const irradianceImage = new Image();
-    irradianceImage.onload = function() {
-        renderData.diffuseTex.loadFromImage(irradianceImage);
-    }
-    irradianceImage.src = "\\images\\ibl_hdr_irradiance.jpg";
-    */
 
     const brdfImage = new Image();
     brdfImage.onload = function() {
@@ -333,8 +319,9 @@ function main()
         quat.rotateY(transform.rotation, transform.rotation, angleChange);
         renderData.camera.updateMatrices();
 
-        integrateDiffuse(gl, renderData);
-        //drawScene(gl, renderData);
+        //integrateDiffuse(gl, renderData);
+        gl.viewport(0, 0, canvas.clientWidth, canvas.clientHeight);
+        drawScene(gl, renderData);
 
         lastTime = currentTime;
         requestAnimationFrame(frameWork);
