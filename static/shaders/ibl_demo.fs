@@ -120,6 +120,7 @@ vec3 PointLightReflectedRadiance(
 uniform vec3 u_albedo;
 uniform float u_roughness;
 uniform float u_metallic;
+uniform float u_brightness;
 
 uniform sampler2D u_diffuseEnvironmentTex;
 uniform sampler2D u_prefilterEnvironmentTex;
@@ -159,11 +160,14 @@ void main()
     kD *= 1.0 - u_metallic;
     
     vec3 irradiance = texture2D(u_diffuseEnvironmentTex, longLatUV).rgb;
+    irradiance = pow(irradiance, vec3(2.2/1.0)) * u_brightness;
     vec3 diffuse = irradiance * u_albedo;
 
     const float MAX_REFLECTION_LOD = 4.0;
     vec3 prefilteredColor = texture2DLodEXT(
         u_prefilterEnvironmentTex, reflectedUV,  5.0).rgb;
+    prefilteredColor = pow(prefilteredColor, vec3(2.2/1.0)) * u_brightness;
+    
     vec2 brdf  = texture2D(u_BRDFTex, vec2(cosNV, u_roughness)).rg;
     vec3 specular = prefilteredColor * (F * brdf.x + brdf.y);
     vec3 result =  (kD * diffuse + specular);

@@ -70,6 +70,12 @@ function initializeUI(renderData)
     roughnessSlider.oninput = function() {
         renderData.roughness = roughnessSlider.value;
     }
+
+    var brightnessSlider = document.getElementById("brightnessSlider");
+    renderData.brightness = brightnessSlider.value;
+    brightnessSlider.oninput = function() {
+        renderData.brightness = brightnessSlider.value;
+    }
 }
 
 function drawOuterSphere(gl, renderData)
@@ -96,6 +102,9 @@ function drawOuterSphere(gl, renderData)
 
     projMatLoc = gl.getUniformLocation(shader.program, "u_ProjectionMatrix");
     gl.uniformMatrix4fv(projMatLoc, false, renderData.camera.projectionMatrix);
+
+    brightnessLoc = gl.getUniformLocation(shader.program, "u_brightness");
+    gl.uniform1f(brightnessLoc, renderData.brightness);
 
     textureLoc = gl.getUniformLocation(shader.program, "tex");
     gl.uniform1i(textureLoc, 0);
@@ -160,6 +169,9 @@ function drawMainSphere(gl, renderData)
 
     roughnessLoc = gl.getUniformLocation(shader.program, "u_roughness");
     gl.uniform1f(roughnessLoc, renderData.roughness);
+
+    brightnessLoc = gl.getUniformLocation(shader.program, "u_brightness");
+    gl.uniform1f(brightnessLoc, renderData.brightness);
 
     diffuseTexLoc = gl.getUniformLocation(shader.program, "u_diffuseEnvironmentTex");
     gl.uniform1i(diffuseTexLoc, 0);

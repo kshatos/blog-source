@@ -46,10 +46,14 @@ void main()
 
             vec2 sampleUV = vec2(u, v);
             vec3 sample = texture2D(u_EnvironmentTexture, sampleUV).rgb;
+            sample = pow(sample, vec3(2.2/1.0));
             irradiance +=  vec3(1.0) * sample * cosNL * sin(phi);
         }
     }
     irradiance = PI * irradiance * (1.0 / (nXSamples * nYSamples));
+
+    irradiance = irradiance / (irradiance + vec3(1.0));
+    irradiance = pow(irradiance, vec3(1.0/2.2)); 
 
     gl_FragColor = vec4(irradiance, 1.0);
 }

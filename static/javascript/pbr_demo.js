@@ -73,14 +73,14 @@ function buildVertexBuffer(gl, renderData)
 {
     let vertexBuffer = gl.createBuffer(gl.ARRAY_BUFFER);
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(sphere_mesh.vertices), gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(sphereMesh.vertices), gl.STATIC_DRAW);
 
     positionID = gl.getAttribLocation(renderData.shaderProgram, 'a_Position');
-    gl.vertexAttribPointer(positionID, 3, gl.FLOAT, false, 4*6, 0);
+    gl.vertexAttribPointer(positionID, 3, gl.FLOAT, false, 4*8, 0);
     gl.enableVertexAttribArray(positionID);
 
     normalID = gl.getAttribLocation(renderData.shaderProgram, 'a_Normal');
-    gl.vertexAttribPointer(normalID, 3, gl.FLOAT, false, 4*6, 4*3);
+    gl.vertexAttribPointer(normalID, 3, gl.FLOAT, false, 4*8, 4*3);
     gl.enableVertexAttribArray(normalID);
 
     renderData.vertexBuffer = vertexBuffer;
@@ -90,7 +90,7 @@ function buildIndexBuffer(gl, renderData)
 {
     const indexBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint16Array(sphere_mesh.indices), gl.STATIC_DRAW);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint16Array(sphereMesh.indices), gl.STATIC_DRAW);
     renderData.indexBuffer = indexBuffer;
 }
 
@@ -201,7 +201,7 @@ function drawScene(gl, renderData)
 
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, renderData.indexBuffer);
     gl.bindBuffer(gl.ARRAY_BUFFER, renderData.vertexBuffer);
-    gl.drawElements(gl.TRIANGLES, sphere_mesh.indices.length, gl.UNSIGNED_SHORT, 0);
+    gl.drawElements(gl.TRIANGLES, sphereMesh.indices.length, gl.UNSIGNED_SHORT, 0);
 }
 
 
