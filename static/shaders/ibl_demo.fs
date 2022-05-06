@@ -78,43 +78,6 @@ vec3 BRDF(
 
 
 //////////////////////////////
-// LIGHTING MODEL
-//////////////////////////////
-struct PointLight
-{
-    vec3 position;
-    float radiantFlux;
-    float range;
-    vec3 color;
-};
-
-float PunctualLightAttenuation(float separation, float range)
-{
-    float separation2 = separation * separation;
-    float relativeRange = min(1.0, separation / range);
-    float relativeRange4 = relativeRange * relativeRange * relativeRange * relativeRange;
-
-    return 1.0 / (separation2 + 1.0e-6) * (1.0 - relativeRange4);
-}
-
-vec3 PointLightReflectedRadiance(
-    PointLight light,
-    PBRSurfaceData surface)
-{
-    float separation = length(light.position - surface.position);
-    vec3 viewDir = normalize(u_viewPos - surface.position);
-    vec3 lightDir = normalize(light.position - surface.position);
-    vec3 halfwayDir = normalize(lightDir + viewDir);
-
-    vec3 f = BRDF(viewDir, lightDir, halfwayDir, surface);
-    vec3 L0 = light.color * light.radiantFlux / (4.0 * PI);
-    float A = PunctualLightAttenuation(separation, light.range);
-
-    return L0 * A * f;
-}
-
-
-//////////////////////////////
 // MAIN
 //////////////////////////////
 uniform vec3 u_albedo;
@@ -123,7 +86,12 @@ uniform float u_metallic;
 uniform float u_brightness;
 
 uniform sampler2D u_diffuseEnvironmentTex;
-uniform sampler2D u_prefilterEnvironmentTex;
+uniform sampler2D u_prefilterTexLevel0;
+uniform sampler2D u_prefilterTexLevel1;
+uniform sampler2D u_prefilterTexLevel2;
+uniform sampler2D u_prefilterTexLevel3;
+uniform sampler2D u_prefilterTexLevel4;
+uniform sampler2D u_prefilterTexLevel5;
 uniform sampler2D u_BRDFTex;
 
 varying vec3 Pos;
@@ -163,11 +131,29 @@ void main()
     irradiance = pow(irradiance, vec3(2.2/1.0)) * u_brightness;
     vec3 diffuse = irradiance * u_albedo;
 
-    const float MAX_REFLECTION_LOD = 4.0;
-    vec3 prefilteredColor = texture2DLodEXT(
-        u_prefilterEnvironmentTex, reflectedUV,  5.0).rgb;
-    prefilteredColor = pow(prefilteredColor, vec3(2.2/1.0)) * u_brightness;
+    vec3 prefilterSample0 = texture2D(u_prefilterTexLevel0, reflectedUV).rgb;
+    vec3 prefilterSample1 = texture2D(u_prefilterTexLevel1, reflectedUV).rgb;
+    vec3 prefilterSample2 = texture2D(u_prefilterTexLevel2, reflectedUV).rgb;
+    vec3 prefilterSample3 = texture2D(u_prefilterTexLevel3, reflectedUV).rgb;
+    vec3 prefilterSample4 = texture2D(u_prefilterTexLevel4, reflectedUV).rgb;
+    vec3 prefilterSample5 = texture2D(u_prefilterTexLevel5, reflectedUV).rgb;
+
     
+    float WSample0 = clamp(1.0 - abs(5.0 * u_roughness - 0.0), 0.0, 1.0);
+    float WSample1 = clamp(1.0 - abs(5.0 * u_roughness - 1.0), 0.0, 1.0);
+    float WSample2 = clamp(1.0 - abs(5.0 * u_roughness - 2.0), 0.0, 1.0);
+    float WSample3 = clamp(1.0 - abs(5.0 * u_roughness - 3.0), 0.0, 1.0);
+    float WSample4 = clamp(1.0 - abs(5.0 * u_roughness - 4.0), 0.0, 1.0);
+    float WSample5 = clamp(1.0 - abs(5.0 * u_roughness - 5.0), 0.0, 1.0);
+
+    vec3 prefilteredColor = (
+        WSample0 * prefilterSample0 +
+        WSample1 * prefilterSample1 +
+        WSample2 * prefilterSample2 +
+        WSample3 * prefilterSample3 +
+        WSample4 * prefilterSample4 +
+        WSample5 * prefilterSample5);
+
     vec2 brdf  = texture2D(u_BRDFTex, vec2(cosNV, u_roughness)).rg;
     vec3 specular = prefilteredColor * (F * brdf.x + brdf.y);
     vec3 result =  (kD * diffuse + specular);

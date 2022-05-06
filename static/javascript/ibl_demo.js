@@ -93,7 +93,7 @@ function drawOuterSphere(gl, renderData)
     if (shader.program == null) { return; }
 
     shader.use();
-    renderData.prefilterTexLevel2.use(gl.TEXTURE0);
+    renderData.evironmentRadianceTex.use(gl.TEXTURE0);
 
     let modelMatrix = model.transform.getMatrix();
     let normalMatrix = normalFromModelMatrix(modelMatrix);
@@ -147,8 +147,13 @@ function drawMainSphere(gl, renderData)
 
     shader.use();
     renderData.diffuseTex.use(gl.TEXTURE0);
-    renderData.prefilterTex.use(gl.TEXTURE1);
-    renderData.BRDFTex.use(gl.TEXTURE2);
+    renderData.BRDFTex.use(gl.TEXTURE1);
+    renderData.prefilterTexLevel0.use(gl.TEXTURE2);
+    renderData.prefilterTexLevel1.use(gl.TEXTURE3);
+    renderData.prefilterTexLevel2.use(gl.TEXTURE4);
+    renderData.prefilterTexLevel3.use(gl.TEXTURE5);
+    renderData.prefilterTexLevel4.use(gl.TEXTURE6);
+    renderData.prefilterTexLevel5.use(gl.TEXTURE7);
 
     let modelMatrix = model.transform.getMatrix();
     let normalMatrix = normalFromModelMatrix(modelMatrix);
@@ -183,11 +188,26 @@ function drawMainSphere(gl, renderData)
     diffuseTexLoc = gl.getUniformLocation(shader.program, "u_diffuseEnvironmentTex");
     gl.uniform1i(diffuseTexLoc, 0);
 
-    prefilterTexLoc = gl.getUniformLocation(shader.program, "u_prefilterEnvironmentTex");
-    gl.uniform1i(prefilterTexLoc, 1);
-
     brdftexLoc = gl.getUniformLocation(shader.program, "u_BRDFTex");
-    gl.uniform1i(brdftexLoc, 2);
+    gl.uniform1i(brdftexLoc, 1);
+
+    prefilterTexLoc = gl.getUniformLocation(shader.program, "u_prefilterTexLevel0");
+    gl.uniform1i(prefilterTexLoc, 2);
+
+    prefilterTexLoc = gl.getUniformLocation(shader.program, "u_prefilterTexLevel1");
+    gl.uniform1i(prefilterTexLoc, 3);
+
+    prefilterTexLoc = gl.getUniformLocation(shader.program, "u_prefilterTexLevel2");
+    gl.uniform1i(prefilterTexLoc, 4);
+
+    prefilterTexLoc = gl.getUniformLocation(shader.program, "u_prefilterTexLevel3");
+    gl.uniform1i(prefilterTexLoc, 5);
+
+    prefilterTexLoc = gl.getUniformLocation(shader.program, "u_prefilterTexLevel4");
+    gl.uniform1i(prefilterTexLoc, 6);
+
+    prefilterTexLoc = gl.getUniformLocation(shader.program, "u_prefilterTexLevel5");
+    gl.uniform1i(prefilterTexLoc, 7);
 
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, model.mesh.indexBuffer);
     gl.bindBuffer(gl.ARRAY_BUFFER, model.mesh.vertexBuffer);
