@@ -28,8 +28,8 @@ void main()
     vec3 normal = calculateNormal(v_UV.x * 2.0 * PI, v_UV.y * PI);
 
     vec3 irradiance = vec3(0.0);
-    const float nXSamples = 100.0;
-    const float nYSamples = 100.0;
+    const float nXSamples = 30.0;
+    const float nYSamples = 30.0;
     for(float i=0.0; i < nXSamples; i += 1.0)
     {
         float u = i / (nXSamples - 1.0);

@@ -11,11 +11,18 @@ function RenderData(gl)
     this.IBLShader = new ShaderProgram(gl);
     this.outerSphereShader = new ShaderProgram(gl);
     this.diffuseIntegrationShader = new ShaderProgram(gl);
+    this.prefilterIntegrationShader = new ShaderProgram(gl);
 
     // Texture
     this.evironmentRadianceTex = new Texture2D(gl);
     this.diffuseTex = new Texture2D(gl);
     this.prefilterTex = new Texture2D(gl);
+    this.prefilterTexLevel0 = new Texture2D(gl);
+    this.prefilterTexLevel1 = new Texture2D(gl);
+    this.prefilterTexLevel2 = new Texture2D(gl);
+    this.prefilterTexLevel3 = new Texture2D(gl);
+    this.prefilterTexLevel4 = new Texture2D(gl);
+    this.prefilterTexLevel5 = new Texture2D(gl);
     this.BRDFTex = new Texture2D(gl);
 
     // Camera
@@ -86,7 +93,7 @@ function drawOuterSphere(gl, renderData)
     if (shader.program == null) { return; }
 
     shader.use();
-    renderData.evironmentRadianceTex.use(gl.TEXTURE0);
+    renderData.prefilterTexLevel2.use(gl.TEXTURE0);
 
     let modelMatrix = model.transform.getMatrix();
     let normalMatrix = normalFromModelMatrix(modelMatrix);
@@ -251,6 +258,47 @@ function integrateDiffuse(gl, renderData)
     gl.bindBuffer(gl.ARRAY_BUFFER, null);
 }
 
+function integratePrefilter(gl, renderData, roughness)
+{
+    gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT || gl.DEPTH_BUFFER_BIT);
+
+    let shader = renderData.prefilterIntegrationShader;
+    let model = renderData.plane;
+
+    if (shader.program == null) { return; }
+
+    shader.use();
+    renderData.evironmentRadianceTex.use(gl.TEXTURE0);
+
+    envTexLoc = gl.getUniformLocation(shader.program, "u_EnvironmentTexture");
+    gl.uniform1i(envTexLoc, 0);
+
+    roughnessLoc = gl.getUniformLocation(shader.program, "u_Roughness");
+    gl.uniform1f(roughnessLoc, roughness);
+
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, model.mesh.indexBuffer);
+    gl.bindBuffer(gl.ARRAY_BUFFER, model.mesh.vertexBuffer);
+
+    let positionID = 0;
+    let normalID = 1
+    let uvID = 2;
+
+    gl.vertexAttribPointer(positionID, 3, gl.FLOAT, false, 4*8, 0);
+    gl.enableVertexAttribArray(positionID);
+
+    gl.vertexAttribPointer(normalID, 3, gl.FLOAT, false, 4*8, 4*3);
+    gl.enableVertexAttribArray(normalID);
+
+    gl.vertexAttribPointer(uvID, 2, gl.FLOAT, false, 4*8, 4*6);
+    gl.enableVertexAttribArray(uvID);
+
+    gl.drawElements(gl.TRIANGLES, planeMesh.indices.length, gl.UNSIGNED_SHORT, 0);
+
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+    gl.bindBuffer(gl.ARRAY_BUFFER, null);
+}
+
 
 function main()
 {
@@ -282,6 +330,12 @@ function main()
     rotateFromZUpToYUp(renderData.mainSphere.transform);
     renderData.mainSphere.transform.scale = vec3.fromValues(2.0, 2.0, 2.0);
 
+    loadTextFile("\\shaders\\prefilter_integration.vs", function(vertexSource) {
+        loadTextFile("\\shaders\\prefilter_integration.fs", function(fragmentSource) {
+            renderData.prefilterIntegrationShader.compileFromSource(vertexSource, fragmentSource);
+        });
+    });
+
     loadTextFile("\\shaders\\ibl_demo.vs", function(vertexSource) {
         loadTextFile("\\shaders\\ibl_demo.fs", function(fragmentSource) {
             renderData.IBLShader.compileFromSource(vertexSource, fragmentSource);
@@ -305,6 +359,25 @@ function main()
                 renderData.prefilterTex.loadFromImage(environmentImage);
                 renderData.diffuseTex.resize(1024, 1024);
                 renderData.diffuseTex.renderTo(gl, function() { integrateDiffuse(gl, renderData); });
+
+                renderData.prefilterTexLevel0.resize(1024, 1024);
+                renderData.prefilterTexLevel0.renderTo(gl, function() { integratePrefilter(gl, renderData, 0.0); });
+
+                renderData.prefilterTexLevel1.resize(512, 512);
+                renderData.prefilterTexLevel1.renderTo(gl, function() { integratePrefilter(gl, renderData, 0.2); });
+
+                renderData.prefilterTexLevel2.resize(256, 256);
+                renderData.prefilterTexLevel2.renderTo(gl, function() { integratePrefilter(gl, renderData, 0.4); });
+
+                renderData.prefilterTexLevel3.resize(128, 128);
+                renderData.prefilterTexLevel3.renderTo(gl, function() { integratePrefilter(gl, renderData, 0.6); });
+
+                renderData.prefilterTexLevel4.resize(64, 64);
+                renderData.prefilterTexLevel4.renderTo(gl, function() { integratePrefilter(gl, renderData, 0.8); });
+
+                renderData.prefilterTexLevel5.resize(32, 32);
+                renderData.prefilterTexLevel5.renderTo(gl, function() { integratePrefilter(gl, renderData, 1.0); });
+
             }
             environmentImage.src = "\\images\\Circus_Backstage_8k.jpg";
         });
