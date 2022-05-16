@@ -9,7 +9,7 @@ varying vec3 v_Normal;
 varying vec2 v_UV;
 
 
-vec3 calculateNormal(float theta, float phi)
+vec3 LongLatToNormal(float theta, float phi)
 {
     float cosTheta = cos(theta);
     float sinTheta = sin(theta);
@@ -23,36 +23,58 @@ vec3 calculateNormal(float theta, float phi)
     );
 }
 
+vec2 NormalToUV(vec3 normal)
+{
+    vec2 uv = vec2(0.0);
+
+    uv.x =  normal.x != 0.0 ? atan(normal.y, normal.x) / (2.0 * PI) : 0.0;
+    uv.y = acos(normal.z) / PI;
+
+    uv.x = uv.x < 0.0 ? uv.x + 1.0 : uv.x;
+    uv.y = uv.y < 0.0 ? uv.y + 1.0 : uv.y;
+
+    return uv;
+}
+
+vec3 NormalHemisphereSample(float theta, float phi, vec3 normal)
+{   
+    vec3 up        = abs(normal.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
+    vec3 tangent   = normalize(cross(up, normal));
+    vec3 bitangent = cross(normal, tangent);
+
+    vec3 H = LongLatToNormal(theta, phi);
+
+    vec3 sampleVec = tangent * H.x + bitangent * H.y + normal * H.z;
+
+    return sampleVec;
+}
+
+
 void main()
 {
-    vec3 normal = calculateNormal(v_UV.x * 2.0 * PI, v_UV.y * PI);
+    vec3 normal = LongLatToNormal(v_UV.x * 2.0 * PI, v_UV.y * PI);
+
+    const float NX = 200.0;
+    const float NY = 100.0;
+    const float dTheta = 2.0 * PI / NX;
+    const float dPhi = 1.0 * PI / NY;
 
     vec3 irradiance = vec3(0.0);
-    const float nXSamples = 30.0;
-    const float nYSamples = 30.0;
-    for(float i=0.0; i < nXSamples; i += 1.0)
+    for (float phi=0.5*PI; phi < PI; phi += dPhi)
     {
-        float u = i / (nXSamples - 1.0);
-        float theta = 2.0 * PI * u;
-        for(float j=0.0; j < nYSamples; j+=1.0)
+        for (float theta=0.0; theta < 2.0 * PI; theta += dTheta)
         {
-            float v = j / (nYSamples - 1.0);
-            float phi = PI * v;
-
-            vec3 light = calculateNormal(theta, phi);
-
+            vec3 light = -NormalHemisphereSample(theta, phi, normal);
             float cosNL = dot(light, normal);
             cosNL = cosNL > 0.0 ? cosNL : 0.0;
-
-            vec2 sampleUV = vec2(u, v);
+            vec2 sampleUV = NormalToUV(light);
             vec3 sample = texture2D(u_EnvironmentTexture, sampleUV).rgb;
             sample = pow(sample, vec3(2.2/1.0));
-            irradiance +=  vec3(1.0) * sample * cosNL * sin(phi);
+            irradiance +=  sample * cosNL * sin(phi) * dTheta * dPhi;
         }
     }
-    irradiance = PI * irradiance * (1.0 / (nXSamples * nYSamples));
+    irradiance /= PI;
 
-    irradiance = irradiance / (irradiance + vec3(1.0));
     irradiance = pow(irradiance, vec3(1.0/2.2)); 
 
     gl_FragColor = vec4(irradiance, 1.0);

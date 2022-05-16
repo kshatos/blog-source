@@ -105,7 +105,9 @@ void main()
         float cosNL = max(dot(normal, light), 0.0);
         if(cosNL > 0.0)
         {
-            prefilteredColor += texture2D(u_EnvironmentTexture, lightUV).rgb * cosNL;
+            vec3 sample = texture2D(u_EnvironmentTexture, lightUV).rgb;
+            sample = pow(sample, vec3(2.2/1.0));
+            prefilteredColor += sample * cosNL;
             totalWeight += cosNL;
         }
     }
