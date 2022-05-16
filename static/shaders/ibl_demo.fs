@@ -128,8 +128,8 @@ void main()
     kD *= 1.0 - u_metallic;
     
     vec3 irradiance = texture2D(u_diffuseEnvironmentTex, longLatUV).rgb;
-    irradiance = pow(irradiance, vec3(2.2/1.0)) * u_brightness;
-    vec3 diffuse = irradiance * u_albedo * (1.0 - F);
+    irradiance *= u_brightness;
+    vec3 diffuse = irradiance * u_albedo;
 
     vec3 prefilterSample0 = texture2D(u_prefilterTexLevel0, reflectedUV).rgb;
     vec3 prefilterSample1 = texture2D(u_prefilterTexLevel1, reflectedUV).rgb;
@@ -154,7 +154,7 @@ void main()
         WSample4 * prefilterSample4 +
         WSample5 * prefilterSample5);
 
-    vec2 brdf  = texture2D(u_BRDFTex, vec2(cosNV, u_roughness*u_roughness)).rg;
+    vec2 brdf  = texture2D(u_BRDFTex, vec2(cosNV, u_roughness)).rg;
     vec3 specular = prefilteredColor * (F * brdf.x + brdf.y);
     vec3 result =  (kD * diffuse + specular);
 

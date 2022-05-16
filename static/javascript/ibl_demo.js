@@ -12,6 +12,7 @@ function RenderData(gl)
     this.outerSphereShader = new ShaderProgram(gl);
     this.diffuseIntegrationShader = new ShaderProgram(gl);
     this.prefilterIntegrationShader = new ShaderProgram(gl);
+    this.brdfLUTShader = new ShaderProgram(gl);
 
     // Texture
     this.evironmentRadianceTex = new Texture2D(gl);
@@ -319,6 +320,41 @@ function integratePrefilter(gl, renderData, roughness)
     gl.bindBuffer(gl.ARRAY_BUFFER, null);
 }
 
+function calculateBRDFLUT(gl, renderData)
+{
+    gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT || gl.DEPTH_BUFFER_BIT);
+
+    let shader = renderData.brdfLUTShader;
+    let model = renderData.plane;
+
+    if (shader.program == null) { return; }
+
+    shader.use();
+
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, model.mesh.indexBuffer);
+    gl.bindBuffer(gl.ARRAY_BUFFER, model.mesh.vertexBuffer);
+
+    let positionID = 0;
+    let normalID = 1
+    let uvID = 2;
+
+    gl.vertexAttribPointer(positionID, 3, gl.FLOAT, false, 4*8, 0);
+    gl.enableVertexAttribArray(positionID);
+
+    gl.vertexAttribPointer(normalID, 3, gl.FLOAT, false, 4*8, 4*3);
+    gl.enableVertexAttribArray(normalID);
+
+    gl.vertexAttribPointer(uvID, 2, gl.FLOAT, false, 4*8, 4*6);
+    gl.enableVertexAttribArray(uvID);
+
+    gl.drawElements(gl.TRIANGLES, planeMesh.indices.length, gl.UNSIGNED_SHORT, 0);
+
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+    gl.bindBuffer(gl.ARRAY_BUFFER, null);
+}
+
+
 
 function main()
 {
@@ -368,6 +404,15 @@ function main()
         });
     });
 
+    loadTextFile("\\shaders\\brdf_lut.vs", function(vertexSource) {
+        loadTextFile("\\shaders\\brdf_lut.fs", function(fragmentSource) {
+            renderData.brdfLUTShader.compileFromSource(vertexSource, fragmentSource);
+            renderData.BRDFTex.resize(1024, 1024);
+            renderData.BRDFTex.renderTo(gl, function() { calculateBRDFLUT(gl, renderData); });
+            renderData.BRDFTex.generateMipmaps();
+        });
+    });
+
     loadTextFile("\\shaders\\diffuse_integration.vs", function(vertexSource) {
         loadTextFile("\\shaders\\diffuse_integration.fs", function(fragmentSource) {
             renderData.diffuseIntegrationShader.compileFromSource(vertexSource, fragmentSource);
@@ -377,37 +422,37 @@ function main()
                 renderData.evironmentRadianceTex.loadFromImage(environmentImage);
                 renderData.evironmentRadianceTex.generateMipmaps();
                 renderData.prefilterTex.loadFromImage(environmentImage);
+                renderData.prefilterTex.generateMipmaps();
                 renderData.diffuseTex.resize(1024, 1024);
                 renderData.diffuseTex.renderTo(gl, function() { integrateDiffuse(gl, renderData); });
+                renderData.diffuseTex.generateMipmaps();
 
                 renderData.prefilterTexLevel0.resize(1024, 1024);
-                renderData.prefilterTexLevel0.renderTo(gl, function() { integratePrefilter(gl, renderData, 0.0); });
+                renderData.prefilterTexLevel0.renderTo(gl, function() { integratePrefilter(gl, renderData, 0.0*0.0); });
 
                 renderData.prefilterTexLevel1.resize(512, 512);
-                renderData.prefilterTexLevel1.renderTo(gl, function() { integratePrefilter(gl, renderData, 0.2); });
+                renderData.prefilterTexLevel1.renderTo(gl, function() { integratePrefilter(gl, renderData, 0.2*0.2); });
+                renderData.prefilterTexLevel1.generateMipmaps();
 
-                renderData.prefilterTexLevel2.resize(256, 256);
-                renderData.prefilterTexLevel2.renderTo(gl, function() { integratePrefilter(gl, renderData, 0.4); });
+                renderData.prefilterTexLevel2.resize(512, 512);
+                renderData.prefilterTexLevel2.renderTo(gl, function() { integratePrefilter(gl, renderData, 0.4*0.4); });
+                renderData.prefilterTexLevel2.generateMipmaps();
 
-                renderData.prefilterTexLevel3.resize(128, 128);
-                renderData.prefilterTexLevel3.renderTo(gl, function() { integratePrefilter(gl, renderData, 0.6); });
+                renderData.prefilterTexLevel3.resize(256, 256);
+                renderData.prefilterTexLevel3.renderTo(gl, function() { integratePrefilter(gl, renderData, 0.6*0.6); });
+                renderData.prefilterTexLevel3.generateMipmaps();
 
-                renderData.prefilterTexLevel4.resize(64, 64);
-                renderData.prefilterTexLevel4.renderTo(gl, function() { integratePrefilter(gl, renderData, 0.8); });
+                renderData.prefilterTexLevel4.resize(256, 256);
+                renderData.prefilterTexLevel4.renderTo(gl, function() { integratePrefilter(gl, renderData, 0.8*0.8); });
+                renderData.prefilterTexLevel4.generateMipmaps();
 
-                renderData.prefilterTexLevel5.resize(32, 32);
-                renderData.prefilterTexLevel5.renderTo(gl, function() { integratePrefilter(gl, renderData, 1.0); });
-
+                renderData.prefilterTexLevel5.resize(128, 128);
+                renderData.prefilterTexLevel5.renderTo(gl, function() { integratePrefilter(gl, renderData, 1.0*1.0); });
+                renderData.prefilterTexLevel5.generateMipmaps();
             }
             environmentImage.src = "\\images\\Circus_Backstage_8k.jpg";
         });
     });
-
-    const brdfImage = new Image();
-    brdfImage.onload = function() {
-        renderData.BRDFTex.loadFromImage(brdfImage);
-    }
-    brdfImage.src = "\\images\\ibl_brdf_lut.png";
 
     initializeUniformData(renderData);
     initializeUI(renderData);

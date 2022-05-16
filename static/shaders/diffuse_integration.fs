@@ -75,7 +75,5 @@ void main()
     }
     irradiance /= PI;
 
-    irradiance = pow(irradiance, vec3(1.0/2.2)); 
-
     gl_FragColor = vec4(irradiance, 1.0);
 }
