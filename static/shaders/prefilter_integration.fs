@@ -1,4 +1,5 @@
 #version 100
+#extension GL_EXT_shader_texture_lod : enable
 precision mediump float;
 const float PI = 3.14159265359;
 
@@ -105,7 +106,7 @@ void main()
         float cosNL = max(dot(normal, light), 0.0);
         if(cosNL > 0.0)
         {
-            vec3 sample = texture2D(u_EnvironmentTexture, lightUV).rgb;
+            vec3 sample = texture2DLodEXT(u_EnvironmentTexture, lightUV, 0.0).rgb;
             sample = pow(sample, vec3(2.2/1.0));
             prefilteredColor += sample * cosNL;
             totalWeight += cosNL;

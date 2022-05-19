@@ -99,6 +99,20 @@ varying vec3 Normal;
 varying vec2 UV;
 
 
+vec2 NormalToUV(vec3 normal)
+{
+    vec2 uv = vec2(0.0);
+
+    uv.x =  normal.x != 0.0 ? atan(-normal.z, normal.x) / (2.0 * PI) : 0.0;
+    uv.y = acos(-normal.y) / PI;
+
+    uv.x = uv.x < 0.0 ? uv.x + 1.0 : uv.x;
+    uv.y = uv.y < 0.0 ? uv.y + 1.0 : uv.y;
+
+    return uv;
+}
+
+
 void main()
 {
     // Camera object geometry
@@ -106,17 +120,8 @@ void main()
     vec3 view = normalize(u_viewPos - Pos);
     vec3 reflected = reflect(-view, normal);
 
-    vec2 longLatUV = vec2(0.0, 0.0);
-    longLatUV.x = (normal.x == 0.0) ? 0.0 : atan(-normal.z, normal.x) / (2.0 * PI);
-    longLatUV.x = longLatUV.x < 0.0 ? longLatUV.x + 1.0 : longLatUV.x;
-    longLatUV.y = acos(-normal.y) / PI;
-    longLatUV.y = longLatUV.y < 0.0 ? longLatUV.y + 1.0 : longLatUV.y;
-
-    vec2 reflectedUV = vec2(0.0, 0.0);
-    reflectedUV.x = (reflected.x == 0.0) ? 0.0 : atan(-reflected.z, reflected.x) / (2.0 * PI);
-    reflectedUV.x = reflectedUV.x < 0.0 ? reflectedUV.x + 1.0 : reflectedUV.x;
-    reflectedUV.y = acos(-reflected.y) / PI;
-    reflectedUV.y = reflectedUV.y < 0.0 ? reflectedUV.y + 1.0 : reflectedUV.y;
+    vec2 longLatUV = NormalToUV(normal);
+    vec2 reflectedUV = NormalToUV(reflected);
 
     // Lighting calculations
     vec3 F0 = mix(vec3(0.04), u_albedo, u_metallic);
@@ -127,16 +132,16 @@ void main()
     vec3 kD = 1.0 - kS;
     kD *= 1.0 - u_metallic;
     
-    vec3 irradiance = texture2D(u_diffuseEnvironmentTex, longLatUV).rgb;
+    vec3 irradiance = texture2DLodEXT(u_diffuseEnvironmentTex, longLatUV, 0.0).rgb;
     irradiance *= u_brightness;
     vec3 diffuse = irradiance * u_albedo;
 
-    vec3 prefilterSample0 = texture2D(u_prefilterTexLevel0, reflectedUV).rgb;
-    vec3 prefilterSample1 = texture2D(u_prefilterTexLevel1, reflectedUV).rgb;
-    vec3 prefilterSample2 = texture2D(u_prefilterTexLevel2, reflectedUV).rgb;
-    vec3 prefilterSample3 = texture2D(u_prefilterTexLevel3, reflectedUV).rgb;
-    vec3 prefilterSample4 = texture2D(u_prefilterTexLevel4, reflectedUV).rgb;
-    vec3 prefilterSample5 = texture2D(u_prefilterTexLevel5, reflectedUV).rgb;
+    vec3 prefilterSample0 = texture2DLodEXT(u_prefilterTexLevel0, reflectedUV, 0.0).rgb;
+    vec3 prefilterSample1 = texture2DLodEXT(u_prefilterTexLevel1, reflectedUV, 0.0).rgb;
+    vec3 prefilterSample2 = texture2DLodEXT(u_prefilterTexLevel2, reflectedUV, 0.0).rgb;
+    vec3 prefilterSample3 = texture2DLodEXT(u_prefilterTexLevel3, reflectedUV, 0.0).rgb;
+    vec3 prefilterSample4 = texture2DLodEXT(u_prefilterTexLevel4, reflectedUV, 0.0).rgb;
+    vec3 prefilterSample5 = texture2DLodEXT(u_prefilterTexLevel5, reflectedUV, 0.0).rgb;
 
     
     float WSample0 = clamp(1.0 - abs(5.0 * u_roughness - 0.0), 0.0, 1.0);
@@ -154,7 +159,7 @@ void main()
         WSample4 * prefilterSample4 +
         WSample5 * prefilterSample5);
 
-    vec2 brdf  = texture2D(u_BRDFTex, vec2(cosNV, u_roughness)).rg;
+    vec2 brdf  = texture2DLodEXT(u_BRDFTex, vec2(cosNV, u_roughness), 0.0).rg;
     vec3 specular = prefilteredColor * (F * brdf.x + brdf.y);
     vec3 result =  (kD * diffuse + specular);
 
