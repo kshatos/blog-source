@@ -54,8 +54,8 @@ void main()
 {
     vec3 normal = LongLatToNormal(v_UV.x * 2.0 * PI, v_UV.y * PI);
 
-    const float NX = 200.0;
-    const float NY = 100.0;
+    const float NX = 150.0;
+    const float NY = 80.0;
     const float dTheta = 2.0 * PI / NX;
     const float dPhi = 1.0 * PI / NY;
 

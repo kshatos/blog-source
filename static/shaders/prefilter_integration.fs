@@ -93,7 +93,7 @@ void main()
     vec3 reflection = normal;
     vec3 view = reflection;
 
-    const int SAMPLE_COUNT = 1024;
+    const int SAMPLE_COUNT = 512;
     float totalWeight = 0.0;   
     vec3 prefilteredColor = vec3(0.0);     
     for(int i = 0; i < SAMPLE_COUNT; ++i)
